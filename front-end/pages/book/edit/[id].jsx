@@ -26,7 +26,7 @@ const EditPage = () => {
         published_date: e.target.published_date.value,
       })
       .then((res) => {
-        if (res.status == 200) {
+        if (res.status === 200) {
           router.push("/book/list.books");
         }
       })
@@ -51,7 +51,7 @@ const EditPage = () => {
       }}
       onSubmit={submitHandler}
     >
-      <Typography>Edit</Typography>
+      <Typography>Edit Book</Typography>
       <TextField
         label="Name"
         defaultValue={data && data?.name}
