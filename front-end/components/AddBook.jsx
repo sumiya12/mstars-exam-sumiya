@@ -1,9 +1,12 @@
 import * as React from "react";
 import { Button, Box, Typography, TextField } from "@mui/material";
+import { DesktopDatePicker } from "@mui/x-date-pickers/DesktopDatePicker";
 import Modal from "@mui/material/Modal";
 import axios from "axios";
+import dayjs from "dayjs";
 import { useState } from "react";
-import DatePicker from "react-datepicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import "react-datepicker/dist/react-datepicker.css";
 
 const style = {
@@ -17,18 +20,22 @@ const style = {
 };
 
 const AddBook = ({ handleClose, open }) => {
-  const [startDate, setStartDate] = useState(new Date());
+  const [value, setValue] = useState(dayjs(null));
+
+  const handleChange = (newValue) => {
+    setValue(newValue);
+  };
+
   const submitHandler = (e) => {
     e.preventDefault();
 
-    console.log(e.target.date.value);
     axios
-      .post("http://localhost:3000/book/create", {
+      .post("https://sumiya.ilearn.mn/book/create", {
         name: e.target.name.value,
         price: e.target.price.value,
-        auhtor: e.target.author.value,
+        author: e.target.author.value,
         ISBN: e.target.isbn.value,
-        published_date: e.target.date.value,
+        published_date: value,
       })
       .then((res) => {
         console.log(res);
@@ -59,7 +66,7 @@ const AddBook = ({ handleClose, open }) => {
               display: "flex",
               padding: 10,
               borderRadius: "16px",
-              gap: 5,
+              gap: 3,
               flexDirection: "column",
               justifyContent: "center",
               alignItems: "center",
@@ -68,15 +75,38 @@ const AddBook = ({ handleClose, open }) => {
           >
             <Typography>Add Book</Typography>
 
-            <TextField label="Name" name="name"></TextField>
-            <TextField label="Price" name="price"></TextField>
-            <TextField label="Auhtor" name="author"></TextField>
-            <TextField label="ISBN" name="isbn"></TextField>
-            <DatePicker
-              name="date"
-              selected={startDate}
-              onChange={(date) => setStartDate(date)}
-            />
+            <TextField
+              label="Name"
+              name="name"
+              style={{ width: 300 }}
+            ></TextField>
+            <TextField
+              label="Price"
+              name="price"
+              style={{ width: 300 }}
+            ></TextField>
+            <TextField
+              label="Auhtor"
+              name="author"
+              style={{ width: 300 }}
+            ></TextField>
+            <TextField
+              label="ISBN"
+              name="isbn"
+              style={{ width: 300 }}
+            ></TextField>
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <DesktopDatePicker
+                label="Published On"
+                style={{ width: 300, borderColor: "" }}
+                name="date"
+                inputFormat="YYYY/MM/DD"
+                value={value}
+                onChange={handleChange}
+                renderInput={(params) => <TextField {...params} />}
+              />
+            </LocalizationProvider>
+
             <Button variant="contained" type="submit">
               Save
             </Button>

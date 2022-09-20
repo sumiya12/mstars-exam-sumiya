@@ -3,15 +3,13 @@ import axios from "axios";
 import useSWR from "swr";
 import { Button, Box, Typography, TextField } from "@mui/material";
 import { useRouter } from "next/router";
-import { useState } from "react";
 import moment from "moment";
 
 const EditPage = () => {
   const router = useRouter();
   const { id } = router.query;
-  const [isLoading, setIsLoading] = useState(false);
 
-  const crudById = `http://localhost:3000/book/getbyid/${id}`;
+  const crudById = `https://sumiya.ilearn.mn/book/getbyid/${id}`;
   const fetcher = async (url) =>
     await axios.get(url).then((res) => res.data.data);
   const { data, error } = useSWR(crudById, fetcher);
@@ -20,7 +18,7 @@ const EditPage = () => {
     e.preventDefault();
 
     axios
-      .put(`http://localhost:3000/book/update?id=${id}`, {
+      .put(`https://sumiya.ilearn.mn/book/update?id=${id}`, {
         name: e.target.name.value,
         price: e.target.price.value,
         author: e.target.author.value,

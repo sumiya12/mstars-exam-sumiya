@@ -4,17 +4,20 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && next export",
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
     "@emotion/react": "^11.10.4",
     "@emotion/styled": "^11.10.4",
+    "@mui/icons-material": "^5.10.6",
     "@mui/material": "^5.10.6",
     "@mui/material-next": "^6.0.0-alpha.53",
     "@mui/styled-engine-sc": "^5.10.6",
+    "@mui/x-date-pickers": "^5.0.2",
     "axios": "^0.27.2",
+    "dayjs": "^1.11.5",
     "framer-motion": "^7.3.5",
     "moment": "^2.29.4",
     "next": "12.3.1",

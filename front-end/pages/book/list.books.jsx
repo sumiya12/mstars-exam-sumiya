@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { styled } from "@mui/material/styles";
 import axios from "axios";
 import moment from "moment";
-
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
+import AddIcon from "@mui/icons-material/Add";
 import {
   TableContainer,
   Table,
@@ -11,7 +13,6 @@ import {
   TableBody,
   Button,
   Link,
-  Typography,
 } from "@mui/material";
 import Paper from "@mui/material/Paper";
 import TableCell, { tableCellClasses } from "@mui/material/TableCell";
@@ -40,25 +41,40 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
 
 const ListBooks = () => {
   const [open, setOpen] = React.useState(false);
+  const [openDel, setOpenDel] = React.useState(false);
+  const [id, setId] = useState();
   const handleOpen = () => setOpen(true);
+  const handleOpenDel = (e) => {
+    setOpenDel(true);
+  };
   const handleClose = () => setOpen(false);
+  const handleCloseDel = () => setOpenDel(false);
 
-  const crudsApi = `http://localhost:3000/book/get`;
+  const crudsApi = `https://sumiya.ilearn.mn/book/get`;
   const fetcher = async (url) =>
     await axios.get(url).then((res) => res.data.data);
   const { data, error } = useSWR(crudsApi, fetcher);
 
   const handledelete = (e) => {
     axios
-      .delete(`http://localhost:3000/book/delete/${e}`)
+      .delete(`https://sumiya.ilearn.mn/book/delete/${e}`)
       .then((res) => {
         if (res.status === 200) {
+          console.log("orj irsen");
           location.reload();
         }
       })
       .catch((error) => {
         console.error(error);
       });
+  };
+
+  const commonStyles = {
+    bgcolor: "background.paper",
+    // m: 1,
+    borderColor: "text.primary",
+    // width: "5rem",
+    height: "5rem",
   };
   return (
     <>
@@ -67,21 +83,50 @@ const ListBooks = () => {
         style={{
           flexDirection: "column",
           display: "flex",
-          // padding: 20,
+
           justifyContent: "center",
           alignItems: "center",
         }}
       >
-        <Typography>Book Application</Typography>
         <Table sx={{ minWidth: 700 }} aria-label="customized table">
           <TableHead>
-            <TableRow>
-              <StyledTableCell align="center"># </StyledTableCell>
-              <StyledTableCell align="center">Name</StyledTableCell>
-              <StyledTableCell align="center">Price</StyledTableCell>
-              <StyledTableCell align="center">Author</StyledTableCell>
-              <StyledTableCell align="center">ISBN</StyledTableCell>
-              <StyledTableCell align="center">Published On</StyledTableCell>
+            <TableRow sx={{ ...commonStyles, borderBottom: 2 }}>
+              <StyledTableCell
+                sx={{ ...commonStyles, borderBottom: 1, fontWeight: "bold" }}
+                align="center"
+              >
+                #{" "}
+              </StyledTableCell>
+              <StyledTableCell
+                sx={{ ...commonStyles, borderBottom: 1, fontWeight: "bold" }}
+                align="center"
+              >
+                Name
+              </StyledTableCell>
+              <StyledTableCell
+                sx={{ ...commonStyles, borderBottom: 1, fontWeight: "bold" }}
+                align="center"
+              >
+                Price
+              </StyledTableCell>
+              <StyledTableCell
+                sx={{ ...commonStyles, borderBottom: 1, fontWeight: "bold" }}
+                align="center"
+              >
+                Author
+              </StyledTableCell>
+              <StyledTableCell
+                sx={{ ...commonStyles, borderBottom: 1, fontWeight: "bold" }}
+                align="center"
+              >
+                ISBN
+              </StyledTableCell>
+              <StyledTableCell
+                sx={{ ...commonStyles, borderBottom: 1, fontWeight: "bold" }}
+                align="center"
+              >
+                Published On
+              </StyledTableCell>
             </TableRow>
           </TableHead>
 
@@ -90,29 +135,57 @@ const ListBooks = () => {
               data.map((e, i) => {
                 return (
                   <StyledTableRow key={i}>
-                    <StyledTableCell align="center">{i + 1}</StyledTableCell>
+                    <StyledTableCell
+                      align="center"
+                      sx={{
+                        fontWeight: "bold",
+                      }}
+                    >
+                      {i + 1}
+                    </StyledTableCell>
 
-                    <StyledTableCell align="center">{e?.name}</StyledTableCell>
-                    <StyledTableCell align="center">{e?.price}</StyledTableCell>
-                    <StyledTableCell align="center">
+                    <StyledTableCell
+                      align="center"
+                      sx={{
+                        fontWeight: "bold",
+                      }}
+                    >
+                      {e?.name}
+                    </StyledTableCell>
+                    <StyledTableCell
+                      align="center"
+                      sx={{ fontWeight: "light", m: 1 }}
+                    >
+                      {e?.price}
+                    </StyledTableCell>
+                    <StyledTableCell
+                      align="center"
+                      sx={{ fontWeight: "light", m: 1 }}
+                    >
                       {e?.author}
                     </StyledTableCell>
-                    <StyledTableCell align="center">{e?.ISBN}</StyledTableCell>
-                    <StyledTableCell align="center">
+                    <StyledTableCell
+                      align="center"
+                      sx={{ fontWeight: "light", m: 1 }}
+                    >
+                      {e?.ISBN}
+                    </StyledTableCell>
+                    <StyledTableCell
+                      align="center"
+                      sx={{ fontWeight: "light", m: 1 }}
+                    >
                       {moment().format("YYYY-MM-DD", e?.published_date)}
                     </StyledTableCell>
-                    <StyledTableCell align="center">
+                    <StyledTableCell align="right">
                       <Button>
-                        <Link href={`/book/edit/${e._id}`}>edit</Link>
+                        <Link href={`/book/edit/${e._id}`}>
+                          <EditIcon style={{ color: "grey" }} />
+                        </Link>
                       </Button>
                     </StyledTableCell>
-                    <StyledTableCell align="center">
-                      <Button
-                        onClick={() => {
-                          handledelete(e._id);
-                        }}
-                      >
-                        delete
+                    <StyledTableCell align="left">
+                      <Button onClick={() => handledelete(e._id)}>
+                        <DeleteForeverIcon style={{ color: "grey" }} />
                       </Button>
                     </StyledTableCell>
                   </StyledTableRow>
@@ -120,11 +193,32 @@ const ListBooks = () => {
               })}
           </TableBody>
         </Table>
-        <Button variant="contained" onClick={handleOpen}>
-          + add book
+      </TableContainer>
+      <div
+        style={{
+          width: "100vw",
+          //   alignItems: "center",
+          padding: "20px",
+          margin: "auto",
+          display: "flex",
+          justifyContent: "center",
+        }}
+      >
+        <Button
+          variant="contained"
+          style={{
+            alignContent: "center",
+            alignItems: "center",
+            textAlign: "center",
+            justifyContent: "center",
+            borderRadius: "none",
+          }}
+          onClick={handleOpen}
+        >
+          <AddIcon /> add book
         </Button>
         <AddBook handleClose={handleClose} open={open} />
-      </TableContainer>
+      </div>
     </>
   );
 };
