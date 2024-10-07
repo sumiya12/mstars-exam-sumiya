@@ -1,1 +1,0 @@
-# mstars-exam-sumiya

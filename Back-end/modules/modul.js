@@ -1,15 +1,37 @@
-const mongoose = require("mongoose");
+import { Schema, model } from "mongoose";
 
-const BookSchema = new mongoose.Schema(
+const giftPhotoSchema = new Schema({
+  size: { type: String },
+  count: { type: Number },
+});
+const paperSchema = new Schema({
+  size: { type: String },
+  count: { type: Number },
+})
+const frameSchema = new Schema({
+  size: { type: String },
+  count: { type: Number },
+})
+const frameAndPaperSchema = new Schema({
+  size: { type: String },
+  count: { type: Number },
+})
+const BookSchema = new Schema(
   {
-    name: { type: String, required: true, trim: true },
-    ISBN: { type: Number, minlength: 10, required: true, trim: true },
-    author: { type: String, trim: true },
-    price: { type: Number, trim: true },
-    published_date: { type: Date },
-  },
-  { timestamps: true }
+    day: { type: String },
+    bookedTime: { type: String, trim: true },
+    packageName: { type: String, trim: true },
+    prePay: { type: Number },
+    postPay: { type: Number },
+    giftPhoto: { type: Boolean },
+    pictures: [giftPhotoSchema],
+    paper: [paperSchema],
+    frame: [frameSchema],
+    frameAndPaper: [frameAndPaperSchema],
+    paymenType: { type: String },
+    description: { type: String },
+  }
 );
 
-const Book = mongoose.model("Book", BookSchema);
-module.exports = Book;
+const Book = model("Book", BookSchema);
+export default Book;
