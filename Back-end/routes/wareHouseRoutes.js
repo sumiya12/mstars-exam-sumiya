@@ -1,6 +1,9 @@
-import { Router } from "express";
-const router = Router();
+import express from "express";
 import { getAllWarehouses, createWarehouseItem } from "../controllers/controller.js";
+const { Router } = express;
+
+const router = Router();
+
 
 // Route to get all warehouse items
 router.get("/get", getAllWarehouses);
