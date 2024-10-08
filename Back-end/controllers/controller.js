@@ -14,7 +14,6 @@ import {
   createCanvas as createCanvasService,
   getByCanvas as getCanvas,
 } from "../modules/servises.js";
-import Book from '../modules/modul.js';
 import { handleResponse } from '../utils/responseHandler.js';
 import WareHouse from "../modules/warehouseModul.js";
 
@@ -150,7 +149,7 @@ export const createWarehouseItem = async (req, res) => {
     const { type, size, quantity } = req.body;
 
 
-    const existingItem = await Book.findOne({ type, size });
+    const existingItem = await WareHouse.findOne({ type, size });
     if (existingItem) {
       existingItem.quantity += quantity;
       await existingItem.save();
