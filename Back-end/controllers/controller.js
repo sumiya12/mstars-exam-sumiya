@@ -148,14 +148,20 @@ export const createWarehouseItem = async (req, res) => {
   try {
     const { type, size, quantity } = req.body;
 
-
     const existingItem = await WareHouse.findOne({ type, size });
+    
     if (existingItem) {
+      // Update quantity if the item exists
       existingItem.quantity += quantity;
       await existingItem.save();
       handleResponse(res, existingItem, "Quantity updated successfully", "Failed to update quantity");
     } else {
-      const newWarehouseItem = await createWarehouse(req);
+      // Create new item only if it is not "paper" or "frame"
+      if (type === "paper" || type === "frame") {
+        return res.status(400).json({ success: false, message: "Cannot create item of type paper or frame." });
+      }
+      
+      const newWarehouseItem = await createWarehouse(req); // Ensure this function is defined
       handleResponse(res, newWarehouseItem, "Item created successfully", "Failed to create item", 201);
     }
   } catch (error) {
@@ -163,6 +169,7 @@ export const createWarehouseItem = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 
 export const updateBook = async (req, res) => {
   const { id } = req.params;
