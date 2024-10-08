@@ -1,14 +1,16 @@
-import express from "express";
+import pkg from 'express';
+const { Router } = pkg;
+const router = Router();
 import {
     getAllBooks, createBook,
     getAllCanvas,
     getByPhoto, getByCardType,
-    getBookById, deleteBook ,
+    getBookById, deleteBook,
     getByAccountType, updateBook,
     getByCashType,
 } from "../controllers/controller.js"; // Adjust as necessary
 
-const router = express.Router();
+
 router.get("/get", getAllBooks);
 router.get("/getbycanvas", getAllCanvas);
 router.get("/getbyphoto", getByPhoto);
