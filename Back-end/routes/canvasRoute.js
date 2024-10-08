@@ -1,4 +1,6 @@
-import { Router } from "express";
+import express from 'express';
+const { Router } = express;
+
 const router = Router();
 import { fetchBooksByCanvas, createNewCanvas } from "../controllers/controller.js";
 
