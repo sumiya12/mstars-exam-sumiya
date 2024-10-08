@@ -1,15 +1,18 @@
-import express, { json } from "express";
 import { config } from "dotenv";
 import { set, connect } from "mongoose";
 import routes from "./routes/index.js"; // Add the .js extension here
 import cors from "cors";
+import express from 'express';
+const { json } = express;
 
+const app = express();
 
 config();
 
-const app = express();
+
 app.use(cors());
 app.use(json());
+
 app.use("/", routes);
 
 // Set strictQuery option before connecting to MongoDB
@@ -23,12 +26,12 @@ connect(ATLAS_MONGO_CONNECTION, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
-.then(() => {
-  console.log("Connected to the MongoDB");
-  app.listen(PORT, () => {
-    console.log("Express server started at Port " + PORT);
+  .then(() => {
+    console.log("Connected to the MongoDB");
+    app.listen(PORT, () => {
+      console.log("Express server started at Port " + PORT);
+    });
+  })
+  .catch((error) => {
+    console.error("MongoDB connection error:", error.message);
   });
-})
-.catch((error) => {
-  console.error("MongoDB connection error:", error.message);
-});
