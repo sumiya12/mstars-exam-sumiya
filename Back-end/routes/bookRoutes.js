@@ -18,7 +18,7 @@ router.get("/getbycardtype", getByCardType);
 router.get("/getbycashtype", getByCashType);
 router.get("/getbyaccounttype", getByAccountType);
 router.post("/create", createBook);
-router.put("/update", updateBook);
+router.put("/update/:id", updateBook);
 router.delete("/delete/:id", deleteBook);
 router.get("/getbyid/:id", getBookById);
 // router.get("/getbyday/:date", getByDay);
