@@ -17,3 +17,11 @@ export const update = async (id, req) => {
     await GiftCard.findByIdAndUpdate(id, req.body);
     return GiftCard.findById(id);
 };
+
+export const deleted = async (id) => {
+    if (Types.ObjectId.isValid(id)) {
+      return await GiftCard.findByIdAndDelete(id);
+    }
+    throw new Error("Invalid ID");
+  };
+  

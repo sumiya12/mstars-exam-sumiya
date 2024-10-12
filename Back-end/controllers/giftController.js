@@ -1,5 +1,5 @@
 import {
-    created, getAllGift, update
+    created, getAllGift, update,deleted
 } from "../services/giftService.js";
 import { handleResponse } from '../utils/responseHandler.js';
 
@@ -39,3 +39,16 @@ export const updateGiftCard = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+
+
+export const deleteGiftCard = async (req, res) => {
+    try {
+      const { id } = req.params;
+      const giftCard = await deleted(id);
+      handleResponse(res, giftCard, "Book deleted successfully", "Failed to delete book");
+    } catch (error) {
+      console.error("Error deleting book:", error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  };
+  
