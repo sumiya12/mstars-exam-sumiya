@@ -6,7 +6,7 @@ import { createNewGiftCard, getAllGiftCard, updateGiftCard } from "../controller
 
 router.get("/get", getAllGiftCard);
 router.post("/create", createNewGiftCard);
-router.put("/update", updateGiftCard);
+router.put("/update/:id", updateGiftCard);
 // router.delete("/delete/:id", controller.deletes);
 // router.get("/getbyid/:id", controller.getById);
 // router.get("/getbyday/:date", controller.getByDay);
