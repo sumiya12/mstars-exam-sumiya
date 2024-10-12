@@ -69,16 +69,27 @@ export const getBookById = async (req, res) => {
 };
 
 const deductQuantity = async (type, size, count) => {
-  const foundItem = await WareHouse.findOne({ type, size });
-  if (foundItem) {
-    if (foundItem.quantity >= count) {
-      foundItem.quantity -= count;
-      await foundItem.save();
-    } else {
+  try {
+    // Find the item in the warehouse
+    const foundItem = await WareHouse.findOne({ type, size });
+
+    // Check if the item exists
+    if (!foundItem) {
+      throw new Error(`No ${type} found for size: ${size}`);
+    }
+
+    // Check if there is sufficient quantity
+    if (foundItem.quantity < count) {
       throw new Error(`Insufficient quantity for ${type} size: ${size}`);
     }
-  } else {
-    throw new Error(`No ${type} found for size: ${size}`);
+
+    // Deduct the quantity and save the updated item
+    foundItem.quantity -= count;
+    await foundItem.save();
+  } catch (error) {
+    // Log the error for debugging
+    console.error("Error deducting quantity:", error);
+    throw error; // Re-throw the error to handle it upstream
   }
 };
 
