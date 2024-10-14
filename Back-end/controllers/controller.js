@@ -16,6 +16,7 @@ import {
 } from "../modules/servises.js";
 import { handleResponse } from '../utils/responseHandler.js';
 import WareHouse from "../modules/warehouseModul.js";
+import Book from "../modules/modul.js";
 
 
 
@@ -95,8 +96,13 @@ const deductQuantity = async (type, size, count) => {
 
 export const createBook = async (req, res) => {
   try {
-    const { frame, paper, frameAndPaper, pictures } = req.body;
+    const { day, bookedTime, frame, paper, frameAndPaper, pictures } = req.body;
 
+    // Check for existing booking
+    const existingBooking = await Book.findOne({ day, bookedTime });
+    if (existingBooking) {
+      return res.status(400).json({ success: false, message: "Booking already exists for this day and time." });
+    }
 
     const processDeductions = async (items, type) => {
       for (const item of items) {
