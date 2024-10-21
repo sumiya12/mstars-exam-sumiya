@@ -45,8 +45,8 @@ export const getByCanvas = async () => {
 export const getByPhoto = async () => {
   return handleDatabaseOperation(async () => {
     const giftPhoto = await Book.find({ giftPhoto: true });
-    return giftPhoto.length > 0 
-      ? giftPhoto 
+    return giftPhoto.length > 0
+      ? giftPhoto
       : { success: false, message: "No gift photos found", data: [] };
   });
 };
@@ -66,7 +66,7 @@ const getByPaymentType = async (paymentType, req) => {
   return handleDatabaseOperation(async () => {
     const books = await Book.find(query); // This will now only look for the existing fields
     const totalSum = books.reduce((acc, book) => acc + (book.postPay || 0), 0);
-    
+
     return {
       success: true,
       totalSum,
@@ -83,7 +83,15 @@ export const getByAccountType = (req) => getByPaymentType("Account", req);
 
 // Update operations
 export const update = async (id, req) => {
-  await Book.findByIdAndUpdate(id, req.body);
+  const { packageName, prePay, postPay, giftPhoto, paymenType, description } = req.body
+  await Book.findByIdAndUpdate(id, {
+    packageName: packageName,
+    prePay: prePay,
+    postPay: postPay,
+    giftPhoto: giftPhoto,
+    paymenType: paymenType,
+    description: description
+  });
   return Book.findById(id);
 };
 

@@ -17,24 +17,58 @@ import {
 import { handleResponse } from '../utils/responseHandler.js';
 import WareHouse from "../modules/warehouseModul.js";
 import Book from "../modules/modul.js";
+import Canvas from "../modules/canvasModul.js";
 
 
 
 
 export const getAllBooks = async (req, res) => {
+  const page = parseInt(req.query.page) || 1; // Current page
+  const limit = parseInt(req.query.limit) || 50; // Number of items per page
+  const offset = (page - 1) * limit; // Calculate offset
+
   try {
-    const books = await get(req);
-    handleResponse(res, books, "Successfully fetched all books", "Failed to fetch books");
+    const totalBooks = await Book.countDocuments(); // Get total number of books
+    const books = await Book.find()
+      .sort({ day: -1 }) // Sort by createdAt in descending order
+      .skip(offset) // Skip the offset
+      .limit(limit); // Limit the number of results
+
+    res.json({
+      success: true,
+      message: "Successfully fetched books",
+      data: books,
+      total: totalBooks,
+      page,
+      totalPages: Math.ceil(totalBooks / limit), // Calculate total pages
+    });
   } catch (error) {
     console.error("Error fetching all books:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
+
+
 export const getAllCanvas = async (req, res) => {
+  const page = parseInt(req.query.page) || 1; // Current page
+  const limit = parseInt(req.query.limit) || 10; // Number of items per page
+  const offset = (page - 1) * limit; // Calculate offset
+
   try {
-    const canvas = await getCanvas();
-    handleResponse(res, canvas, "Successfully fetched all canvases", "Failed to fetch canvases");
+    const totalCanvas = await Canvas.countDocuments();
+    const canvases = await Canvas.find().sort({ day: -1 }).skip(offset) // Skip the offset
+      .limit(limit);
+    res.json({
+      success: true,
+      message: "Successfully fetched Canvases",
+      data: canvases,
+      total: totalCanvas,
+      page,
+      totalPages: Math.ceil(totalCanvas / limit),
+    })
+    // const canvas = await getCanvas();
+    // handleResponse(res, canvas, "Successfully fetched all canvases", "Failed to fetch canvases");
   } catch (error) {
     console.error("Error fetching all canvases:", error);
     res.status(500).json({ success: false, message: error.message });
@@ -212,9 +246,24 @@ export const deleteBook = async (req, res) => {
 };
 
 export const fetchBooksByCanvas = async (req, res) => {
+  const page = parseInt(req.query.page) || 1; // Current page
+  const limit = parseInt(req.query.limit) || 20; // Number of items per page
+  const offset = (page - 1) * limit; // Calculate offset
+
   try {
-    const books = await getBooksByCanvas(req);
-    handleResponse(res, books, "Successfully fetched books by canvas", "Failed to fetch books by canvas");
+    const totalCanvas = await Canvas.countDocuments();
+    const canvases = await Canvas.find().sort({ day: -1 }).skip(offset) // Skip the offset
+      .limit(limit);
+    res.json({
+      success: true,
+      message: "Successfully fetched Canvases",
+      data: canvases,
+      total: totalCanvas,
+      page,
+      totalPages: Math.ceil(totalCanvas / limit),
+    })
+    // const canvas = await getCanvas();
+    // handleResponse(res, canvas, "Successfully fetched all canvases", "Failed to fetch canvases");
   } catch (error) {
     console.error("Error fetching books by canvas:", error);
     res.status(500).json({ success: false, message: error.message });
