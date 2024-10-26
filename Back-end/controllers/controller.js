@@ -13,6 +13,8 @@ import {
   createWarehouse,
   createCanvas as createCanvasService,
   getByCanvas as getCanvas,
+  deleteCanvas
+  , updateCanvas
 } from "../modules/servises.js";
 import { handleResponse } from '../utils/responseHandler.js';
 import WareHouse from "../modules/warehouseModul.js";
@@ -233,12 +235,32 @@ export const updateBook = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+export const updatedCanvas = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const updatedCanvas = await updateCanvas(id, req);
+    handleResponse(res, updatedCanvas, "Book updated successfully", "Failed to update book");
+  } catch (error) {
+    console.error("Error updating book:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 export const deleteBook = async (req, res) => {
   try {
     const { id } = req.params;
     const book = await deleted(id);
     handleResponse(res, book, "Book deleted successfully", "Failed to delete book");
+  } catch (error) {
+    console.error("Error deleting book:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+export const deletedCanvas = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const canvas = await deleteCanvas(id);
+    handleResponse(res, canvas, "Book deleted successfully", "Failed to delete book");
   } catch (error) {
     console.error("Error deleting book:", error);
     res.status(500).json({ success: false, message: error.message });

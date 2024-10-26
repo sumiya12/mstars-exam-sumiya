@@ -3,6 +3,7 @@ import Canvas from "./canvasModul.js";
 import WareHouse from "./warehouseModul.js";
 import { Types } from "mongoose";
 
+
 // Helper function for standard error handling
 const handleDatabaseOperation = async (operation) => {
   try {
@@ -95,10 +96,48 @@ export const update = async (id, req) => {
   return Book.findById(id);
 };
 
+
+export const updateCanvas = async (id, req) => {
+  const { phone, mail, pictures, paymenType, description } = req.body;
+
+  try {
+    // Create an update object
+    const updateData = {
+      phone,
+      mail,
+      paymenType,
+      description,
+    };
+
+    // Handle the pictures array
+    if (Array.isArray(pictures)) {
+      // If pictures array is provided, replace the existing array
+      updateData.pictures = pictures;
+    }
+
+    // Update the Canvas document
+    await Canvas.findByIdAndUpdate(id, { $set: updateData });
+
+    // Return the updated Canvas document
+    return await Canvas.findById(id);
+  } catch (error) {
+    console.error("Error updating canvas:", error);
+    throw new Error("Failed to update canvas");
+  }
+};
+
 // Delete operations
 export const deleted = async (id) => {
   if (Types.ObjectId.isValid(id)) {
     return await Book.findByIdAndDelete(id);
+  }
+  throw new Error("Invalid ID");
+};
+export const deleteCanvas = async (id) => {
+  if (Types.ObjectId.isValid(id)) {
+    console.log("success");
+    return await Canvas.findByIdAndDelete(id);
+
   }
   throw new Error("Invalid ID");
 };
