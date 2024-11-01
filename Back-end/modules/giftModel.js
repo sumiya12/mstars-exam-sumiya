@@ -4,6 +4,7 @@ const GiftCardSchema = new Schema(
     {
         package: { type: String },
         code: { type: String },
+        instagram: { type: String },
         phone: { type: Number },
         comephone: { type: Number },
     },
