@@ -132,10 +132,13 @@ const deductQuantity = async (type, size, count) => {
 
 export const createBook = async (req, res) => {
   try {
-    const { day, bookedTime, frame, paper, frameAndPaper, pictures } = req.body;
+    const { day, bookedTime, frame, paper, frameAndPaper, pictures, packageName } = req.body;
 
     // Check for existing booking
-    const existingBooking = await Book.findOne({ day, bookedTime });
+    const existingBooking = await Book.findOne({ day, bookedTime, packageName });
+    console.log(existingBooking);
+
+
     if (existingBooking) {
       return res.status(400).json({ success: false, message: "Booking already exists for this day and time." });
     }
