@@ -84,16 +84,36 @@ export const getByAccountType = (req) => getByPaymentType("Account", req);
 
 // Update operations
 export const update = async (id, req) => {
-  const { packageName, prePay, postPay, giftPhoto, paymenType, description } = req.body
-  await Book.findByIdAndUpdate(id, {
-    packageName: packageName,
-    prePay: prePay,
-    postPay: postPay,
-    giftPhoto: giftPhoto,
-    paymenType: paymenType,
-    description: description
-  });
-  return Book.findById(id);
+  const { packageName, prePay, postPay, giftPhoto, pictures, paper, frame, frameAndPaper, paymenType, description } = req.body
+
+  try {
+    const updateData = {
+      packageName: packageName,
+      prePay: prePay,
+      postPay: postPay,
+      giftPhoto: giftPhoto,
+      paymenType: paymenType,
+      description: description
+    }
+    if (Array.isArray(pictures)) {
+      updateData.pictures = pictures;
+    }
+    if (Array.isArray(paper)) {
+      updateData.paper = paper;
+    }
+    if (Array.isArray(frame)) {
+      updateData.frame = frame;
+    }
+    if (Array.isArray(frameAndPaper)) {
+      updateData.frameAndPaper = frameAndPaper;
+    }
+
+    await Book.findByIdAndUpdate(id, { $set: updateData });
+    return await Book.findById(id);
+  } catch (error) {
+    console.error("Error updating book:", error);
+    throw new Error("Failed to update book");
+  }
 };
 
 
@@ -135,7 +155,6 @@ export const deleted = async (id) => {
 };
 export const deleteCanvas = async (id) => {
   if (Types.ObjectId.isValid(id)) {
-    console.log("success");
     return await Canvas.findByIdAndDelete(id);
 
   }

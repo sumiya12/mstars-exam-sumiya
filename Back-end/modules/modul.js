@@ -18,6 +18,7 @@ const frameAndPaperSchema = new Schema({
 })
 const BookSchema = new Schema(
   {
+    year: { type: String },
     day: { type: String },
     bookedTime: { type: String, trim: true },
     packageName: { type: String, trim: true },
