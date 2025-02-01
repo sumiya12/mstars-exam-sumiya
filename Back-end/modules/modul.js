@@ -7,32 +7,36 @@ const giftPhotoSchema = new Schema({
 const paperSchema = new Schema({
   size: { type: String },
   count: { type: Number },
-})
+});
 const frameSchema = new Schema({
   size: { type: String },
   count: { type: Number },
-})
+});
 const frameAndPaperSchema = new Schema({
   size: { type: String },
   count: { type: Number },
-})
-const BookSchema = new Schema(
-  {
-    year: { type: String },
-    day: { type: String },
-    bookedTime: { type: String, trim: true },
-    packageName: { type: String, trim: true },
-    prePay: { type: Number },
-    postPay: { type: Number },
-    giftPhoto: { type: Boolean },
-    pictures: [giftPhotoSchema],
-    paper: [paperSchema],
-    frame: [frameSchema],
-    frameAndPaper: [frameAndPaperSchema],
-    paymenType: { type: String },
-    description: { type: String },
-  }
-);
+});
+const canvasSchema = new Schema({
+  size: { type: String },
+  code: { type: String },
+  price: { type: Number },
+});
+const BookSchema = new Schema({
+  year: { type: String },
+  day: { type: String },
+  bookedTime: { type: String, trim: true },
+  packageName: { type: String, trim: true },
+  prePay: { type: Number },
+  postPay: { type: Number },
+  giftPhoto: { type: Boolean },
+  pictures: [giftPhotoSchema],
+  paper: [paperSchema],
+  frame: [frameSchema],
+  frameAndPaper: [frameAndPaperSchema],
+  canvas: [canvasSchema],
+  paymenType: { type: String },
+  description: { type: String },
+});
 
 const Book = model("Book", BookSchema);
 export default Book;
