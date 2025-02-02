@@ -108,13 +108,11 @@ export const getBookById = async (req, res) => {
   try {
     const book = await getByIdService(id);
     if (book) {
-      res
-        .status(200)
-        .json({
-          success: true,
-          data: book,
-          message: "Book retrieved successfully.",
-        });
+      res.status(200).json({
+        success: true,
+        data: book,
+        message: "Book retrieved successfully.",
+      });
     } else {
       res.status(404).json({ success: false, message: "Book not found." });
     }
@@ -152,14 +150,20 @@ const deductQuantity = async (type, size, count) => {
 export const createBook = async (req, res) => {
   try {
     const {
+      year,
       day,
       bookedTime,
+      packageName,
+      prePay,
+      postPay,
+      giftPhoto,
       frame,
       paper,
       frameAndPaper,
       pictures,
-      packageName,
       canvas, // ✅ Include canvas here
+      paymenType,
+      description,
     } = req.body;
 
     const existingBooking = await Book.findOne({
@@ -171,7 +175,8 @@ export const createBook = async (req, res) => {
     if (existingBooking) {
       return res.status(400).json({
         success: false,
-        message: "Booking already exists for this day and time and also package.",
+        message:
+          "Booking already exists for this day and time and also package.",
       });
     }
 
@@ -202,14 +207,20 @@ export const createBook = async (req, res) => {
 
     // ✅ Ensure canvas is included in req.body before saving
     const bookingData = {
+      year,
       day,
       bookedTime,
       packageName,
+      prePay,
+      postPay,
+      giftPhoto,
       frame,
       paper,
       frameAndPaper,
       pictures,
-      canvas, // ✅ Include canvas in the new booking object
+      canvas, // ✅ Include canvas here
+      paymenType,
+      description, // ✅ Include canvas in the new booking object
     };
 
     const booking = await created({ body: bookingData });
@@ -226,7 +237,6 @@ export const createBook = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
 
 export const createNewCanvas = async (req, res) => {
   try {
@@ -261,12 +271,10 @@ export const createWarehouseItem = async (req, res) => {
     } else {
       // Create new item only if it is not "paper" or "frame"
       if (type === "paper" || type === "frame") {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "Cannot create item of type paper or frame.",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "Cannot create item of type paper or frame.",
+        });
       }
 
       const newWarehouseItem = await createWarehouse(req); // Ensure this function is defined
