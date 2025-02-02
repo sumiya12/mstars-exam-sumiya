@@ -204,7 +204,7 @@ export const createBook = async (req, res) => {
       }
     }
 
-    const booking = await created(req);
+    const booking = await created(req);    
     handleResponse(
       res,
       booking,
