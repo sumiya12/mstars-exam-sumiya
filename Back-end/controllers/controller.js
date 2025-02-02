@@ -159,6 +159,7 @@ export const createBook = async (req, res) => {
       frameAndPaper,
       pictures,
       packageName,
+      canvas, // ✅ Include canvas here
     } = req.body;
 
     const existingBooking = await Book.findOne({
@@ -166,16 +167,12 @@ export const createBook = async (req, res) => {
       bookedTime,
       packageName,
     });
-    console.log(existingBooking);
 
     if (existingBooking) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message:
-            "Booking already exists for this day and time and also package.",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Booking already exists for this day and time and also package.",
+      });
     }
 
     const processDeductions = async (items, type) => {
@@ -184,27 +181,39 @@ export const createBook = async (req, res) => {
       }
     };
 
-    if (pictures && pictures.length > 0) {
+    if (pictures?.length) {
       await processDeductions(pictures, "paper");
     }
 
-    if (paper && paper.length > 0) {
+    if (paper?.length) {
       await processDeductions(paper, "paper");
     }
 
-    if (frame && frame.length > 0) {
+    if (frame?.length) {
       await processDeductions(frame, "frame");
     }
 
-    if (frameAndPaper && frameAndPaper.length > 0) {
+    if (frameAndPaper?.length) {
       for (const item of frameAndPaper) {
-        console.log(item);
         await deductQuantity("frame", item.size, item.count || 0);
         await deductQuantity("paper", item.size, item.count || 0);
       }
     }
 
-    const booking = await created(req);    
+    // ✅ Ensure canvas is included in req.body before saving
+    const bookingData = {
+      day,
+      bookedTime,
+      packageName,
+      frame,
+      paper,
+      frameAndPaper,
+      pictures,
+      canvas, // ✅ Include canvas in the new booking object
+    };
+
+    const booking = await created({ body: bookingData });
+
     handleResponse(
       res,
       booking,
@@ -217,6 +226,7 @@ export const createBook = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 
 export const createNewCanvas = async (req, res) => {
   try {
