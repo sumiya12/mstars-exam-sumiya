@@ -28,6 +28,7 @@ const BookSchema = new Schema({
   packageName: { type: String, trim: true },
   prePay: { type: Number },
   postPay: { type: Number },
+  addPayment: { type: Number },
   giftPhoto: { type: Boolean },
   pictures: [giftPhotoSchema],
   paper: [paperSchema],
