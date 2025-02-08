@@ -157,6 +157,7 @@ export const createBook = async (req, res) => {
       prePay,
       postPay,
       addPayment,
+      minusPayment,
       giftPhoto,
       frame,
       paper,
@@ -215,14 +216,15 @@ export const createBook = async (req, res) => {
       prePay,
       postPay,
       addPayment,
+      minusPayment,
       giftPhoto,
       frame,
       paper,
       frameAndPaper,
       pictures,
-      canvas, // ✅ Include canvas here
+      canvas,
       paymenType,
-      description, // ✅ Include canvas in the new booking object
+      description, 
     };
 
     const booking = await created({ body: bookingData });

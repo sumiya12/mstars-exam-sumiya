@@ -29,6 +29,7 @@ const BookSchema = new Schema({
   prePay: { type: Number },
   postPay: { type: Number },
   addPayment: { type: Number },
+  minusPayment: { type: Number },
   giftPhoto: { type: Boolean },
   pictures: [giftPhotoSchema],
   paper: [paperSchema],
