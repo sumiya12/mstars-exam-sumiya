@@ -165,7 +165,10 @@ export const createBook = async (req, res) => {
       pictures,
       canvas, // ✅ Include canvas here
       paymenType,
+      createdBy,
       description,
+
+    
     } = req.body;
 
     const existingBooking = await Book.findOne({
@@ -206,6 +209,7 @@ export const createBook = async (req, res) => {
         await deductQuantity("paper", item.size, item.count || 0);
       }
     }
+    
 
     // ✅ Ensure canvas is included in req.body before saving
     const bookingData = {
@@ -225,6 +229,8 @@ export const createBook = async (req, res) => {
       canvas,
       paymenType,
       description, 
+      createdBy,
+      createdAt: new Date(),
     };
 
     const booking = await created({ body: bookingData });
@@ -357,32 +363,6 @@ export const deletedCanvas = async (req, res) => {
   }
 };
 
-// export const fetchBooksByCanvas = async (req, res) => {
-//   const page = parseInt(req.query.page) || 1; // Current page
-//   const limit = parseInt(req.query.limit) || 20; // Number of items per page
-//   const offset = (page - 1) * limit; // Calculate offset
-
-//   try {
-//     const totalCanvas = await Canvas.countDocuments();
-//     const canvases = await Canvas.find()
-//       .sort({ _id: -1 }) // Sort by _id in descending order (latest first)
-//       .skip(offset)      // Skip the offset
-//       .limit(limit);
-//     res.json({
-//       success: true,
-//       message: "Successfully fetched Canvases",
-//       data: canvases,
-//       total: totalCanvas,
-//       page,
-//       totalPages: Math.ceil(totalCanvas / limit),
-//     })
-//     // const canvas = await getCanvas();
-//     // handleResponse(res, canvas, "Successfully fetched all canvases", "Failed to fetch canvases");
-//   } catch (error) {
-//     console.error("Error fetching books by canvas:", error);
-//     res.status(500).json({ success: false, message: error.message });
-//   }
-// };
 
 export const getByPhoto = async (req, res) => {
   try {

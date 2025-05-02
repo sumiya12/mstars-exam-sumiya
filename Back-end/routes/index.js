@@ -12,7 +12,6 @@ router.use("/book", bookRoutes);
 router.use("/warehouse", routesWarehouse);
 router.use("/canvas", routesCanvas);
 router.use("/login", routeslogin);
-router.use("/login", routeslogin);
 router.use("/giftcard", routesGift);
 
 

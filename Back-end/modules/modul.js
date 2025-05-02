@@ -38,6 +38,8 @@ const BookSchema = new Schema({
   canvas: [canvasSchema],
   paymenType: { type: String },
   description: { type: String },
+  createdBy: { type: String },
+  createdAt: { type: Date, default: Date.now },
 });
 
 const Book = model("Book", BookSchema);
