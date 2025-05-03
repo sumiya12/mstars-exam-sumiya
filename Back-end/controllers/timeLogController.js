@@ -18,9 +18,10 @@ export const getTimeLogsByDate = async (req, res) => {
 };
 
 export const createTimeLog = async (req, res) => {
-  const { employee, date, clockIn, clockOut } = req.body;
+  const { employee, date, clockIn, clockOut, description } = req.body;
 
   const log = new TimeLog({
+    description, // 👈 added description
     employee,
     date: dayjs().format("YYYY-MM-DD"), // 👈 ensures it's a clean string
     clockIn,

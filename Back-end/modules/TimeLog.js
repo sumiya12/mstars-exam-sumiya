@@ -3,7 +3,8 @@ import { Schema, model } from "mongoose";
 
 const timeLogSchema = new Schema(
   {
-    employee: { type: String, required: true },
+    employee: { type: String},
+    description: { type: String },
     date: { type: String, required: true }, // YYYY-MM-DD
     clockIn: { type: String, required: true }, // HH:mm
     clockOut: { type: String, required: true }, // HH:mm
