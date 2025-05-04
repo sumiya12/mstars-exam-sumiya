@@ -13,9 +13,13 @@ const handleDatabaseOperation = async (operation) => {
 export const created = async (req) => handleDatabaseOperation(() => new GiftCard(req.body).save());
 export const getAllGift = async () => handleDatabaseOperation(() => GiftCard.find());
 
-export const update = async (id, req) => {
-    await GiftCard.findByIdAndUpdate(id, req.body);
-    return GiftCard.findById(id);
+export const update = async (id, data) => {
+    const updatedGiftCard = await GiftCard.findByIdAndUpdate(id, data, {
+        new: true,
+        runValidators: true,
+    });
+
+    return updatedGiftCard;
 };
 
 export const deleted = async (id) => {

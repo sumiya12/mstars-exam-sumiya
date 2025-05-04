@@ -31,11 +31,16 @@ export const createNewGiftCard = async (req, res) => {
 
 export const updateGiftCard = async (req, res) => {
     const { id } = req.params;
+
+    if (!req.body || Object.keys(req.body).length === 0) {
+        return res.status(400).json({ success: false, message: "No data provided to update." });
+    }
+
     try {
-        const updatedGift = await update(id, req);
-        handleResponse(res, updatedGift, "Book updated successfully", "Failed to update book");
+        const updatedGift = await update(id, req.body);
+        handleResponse(res, updatedGift, "Gift card updated successfully", "Failed to update gift card");
     } catch (error) {
-        console.error("Error updating book:", error);
+        console.error("Error updating gift card:", error);
         res.status(500).json({ success: false, message: error.message });
     }
 };
