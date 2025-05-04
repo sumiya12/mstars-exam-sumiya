@@ -317,6 +317,22 @@ export const updateBook = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+export const updateCanvasCheck = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const updatedCanvas = await updateCanvasCheck(id, req);
+    handleResponse(
+      res,
+      updatedCanvas,
+      "Book updated successfully",
+      "Failed to update book"
+    );
+  } catch (error) {
+    console.error("Error updating book:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 export const updatedCanvas = async (req, res) => {
   const { id } = req.params;
   try {

@@ -3,7 +3,6 @@ import Canvas from "./canvasModul.js";
 import WareHouse from "./warehouseModul.js";
 import { Types } from "mongoose";
 
-
 // Helper function for standard error handling
 const handleDatabaseOperation = async (operation) => {
   try {
@@ -15,14 +14,19 @@ const handleDatabaseOperation = async (operation) => {
 };
 
 // Create operations
-export const created = async (req) => handleDatabaseOperation(() => new Book(req.body).save());
-export const createCanvas = async (req) => handleDatabaseOperation(() => new Canvas(req.body).save());
-export const createWarehouse = async (req) => handleDatabaseOperation(() => new WareHouse(req.body).save());
+export const created = async (req) =>
+  handleDatabaseOperation(() => new Book(req.body).save());
+export const createCanvas = async (req) =>
+  handleDatabaseOperation(() => new Canvas(req.body).save());
+export const createWarehouse = async (req) =>
+  handleDatabaseOperation(() => new WareHouse(req.body).save());
 
 // Read operations
-export const getAllBooks = async () => handleDatabaseOperation(() => Book.find());
+export const getAllBooks = async () =>
+  handleDatabaseOperation(() => Book.find());
 // export const getAllCanvas = async () => handleDatabaseOperation(() => Canvas.find());
-export const getAllWarehouse = async () => handleDatabaseOperation(() => WareHouse.find());
+export const getAllWarehouse = async () =>
+  handleDatabaseOperation(() => WareHouse.find());
 
 export const getById = async (id) => {
   if (Types.ObjectId.isValid(id)) {
@@ -76,15 +80,24 @@ const getByPaymentType = async (paymentType, req) => {
   });
 };
 
-
-
 export const getByCardType = (req) => getByPaymentType("Card", req);
 export const getByCashType = (req) => getByPaymentType("Cash", req);
 export const getByAccountType = (req) => getByPaymentType("Account", req);
 
 // Update operations
 export const update = async (id, req) => {
-  const { packageName, prePay, postPay, giftPhoto, pictures, paper, frame, frameAndPaper, paymenType, description } = req.body
+  const {
+    packageName,
+    prePay,
+    postPay,
+    giftPhoto,
+    pictures,
+    paper,
+    frame,
+    frameAndPaper,
+    paymenType,
+    description,
+  } = req.body;
 
   try {
     const updateData = {
@@ -93,8 +106,8 @@ export const update = async (id, req) => {
       postPay: postPay,
       giftPhoto: giftPhoto,
       paymenType: paymenType,
-      description: description
-    }
+      description: description,
+    };
     if (Array.isArray(pictures)) {
       updateData.pictures = pictures;
     }
@@ -116,6 +129,25 @@ export const update = async (id, req) => {
   }
 };
 
+export const updateCanvasCheck = async (id, req) => {
+  const { pickedUpCanvas } = req.body;
+
+  try {
+    // Create an update object
+    const updateData = {
+      pickedUpCanvas,
+    };
+
+    // Update the Canvas document
+    await Book.findByIdAndUpdate(id, { $set: updateData });
+
+    // Return the updated Canvas document
+    return await Book.findById(id);
+  } catch (error) {
+    console.error("Error updating canvas:", error);
+    throw new Error("Failed to update canvas");
+  }
+};
 
 export const updateCanvas = async (id, req) => {
   const { phone, mail, pictures, paymenType, description } = req.body;
@@ -156,7 +188,6 @@ export const deleted = async (id) => {
 export const deleteCanvas = async (id) => {
   if (Types.ObjectId.isValid(id)) {
     return await Canvas.findByIdAndDelete(id);
-
   }
   throw new Error("Invalid ID");
 };
