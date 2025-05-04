@@ -15,6 +15,7 @@ import {
   getByCanvas as getCanvas,
   deleteCanvas,
   updateCanvas,
+  updateCanvasCheck,
 } from "../modules/servises.js";
 import { handleResponse } from "../utils/responseHandler.js";
 import WareHouse from "../modules/warehouseModul.js";
@@ -317,7 +318,7 @@ export const updateBook = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-export const updateCanvasCheck = async (req, res) => {
+export const updateIsCanvasCheck = async (req, res) => {
   const { id } = req.params;
   try {
     const updatedCanvas = await updateCanvasCheck(id, req);

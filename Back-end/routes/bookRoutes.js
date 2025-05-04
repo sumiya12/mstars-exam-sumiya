@@ -13,7 +13,7 @@ import {
   updateBook,
   getByCashType,
   getAllBookForChart,
-  updateCanvasCheck,
+  updateIsCanvasCheck,
 } from "../controllers/controller.js"; // Adjust as necessary
 import { getDailySummary } from "../controllers/summaryController.js"; // Adjust as necessary
 
@@ -29,6 +29,6 @@ router.put("/update/:id", updateBook);
 router.delete("/delete/:id", deleteBook);
 router.get("/getbyid/:id", getBookById);
 router.get("/daily-summary", getDailySummary);
-router.put("/updatecanvas/:id", updateCanvasCheck);
+router.put("/updatecanvas/:id", updateIsCanvasCheck);
 
 export default router;
