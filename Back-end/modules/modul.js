@@ -40,6 +40,7 @@ const BookSchema = new Schema({
   description: { type: String },
   createdBy: { type: String },
   createdAt: { type: Date, default: Date.now },
+  pickedUpCanvas: { type: Boolean, default: false },
 });
 
 const Book = model("Book", BookSchema);
