@@ -3,13 +3,13 @@ import { set, connect } from "mongoose";
 import routes from "./routes/index.js"; // Add the .js extension here
 import cors from "cors";
 import express from 'express';
+import calendlyRoutes from './routes/calendly.routes.js'; // Adjust the import path as necessary
 const { json } = express;
-
 const app = express();
-
 config();
 
 
+app.use('/calendly', calendlyRoutes);
 app.use(cors());
 app.use(json());
 
