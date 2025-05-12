@@ -17,6 +17,16 @@ export const getTimeLogsByDate = async (req, res) => {
   }
 };
 
+export const getallTimeLogs = async (req, res) => {
+  try {
+    const logs = await TimeLog.find().sort({ createdAt: -1 }); // latest first
+    res.json(logs);
+  } catch (error) {
+    console.error("Failed to fetch logs:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+}
+
 export const createTimeLog = async (req, res) => {
   const { employee, date, clockIn, clockOut, description } = req.body;
 

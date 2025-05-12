@@ -1,5 +1,7 @@
 import Book from "../modules/modul.js";
-import ExpenseSchema from "../modules/ExpenseSchema.js";
+import Expense from "../modules/ExpenseSchema.js";
+import { created, getAllExpense } from "../services/expenseService.js";
+import  axios from "axios";
 
 export const getTotal = async (req, res) => {
   const { month } = req.query;
@@ -36,40 +38,99 @@ export const getTotal = async (req, res) => {
   });
 };
 
+
 export const registerExpense = async (req, res) => {
-  const { expense_amount, description } = req.body;
+  const { expense_amount, description, createdAt } = req.body;
 
   try {
-    const expense = new ExpenseSchema({
+    const currentMonth = createdAt.slice(0, 7); // "2025-05"
+
+    // Сарын хамгийн сүүлийн expense-г авна
+    const lastExpense = await Expense.findOne({
+      createdAt: { $regex: `^${currentMonth}` },
+    })
+      .sort({ createdAt: -1 })
+      .exec();
+
+    let first_balance;
+
+    if (lastExpense) {
+      first_balance = lastExpense.balance;
+    } else {
+      // Энд таны орлого тооцдог API-г дуудаж байна
+      const response = await axios.get(
+        `http://localhost:3001/expense/get?month=${currentMonth}`
+      );
+      const totalStr = response.data?.total || "0";
+      first_balance = parseInt(totalStr.replace(/,/g, ""), 10);
+    }
+
+    const balance = first_balance - expense_amount;
+
+    const expenseData = {
       expense_amount,
       description,
-      firstbalance,
+      first_balance,
       balance,
       createdAt,
+    };
+
+    await created({ body: expenseData });
+
+    res.status(200).json({
+      success: true,
+      data: expenseData,
+      message: "Зарлага амжилттай бүртгэгдлээ.",
     });
-
-    await expense.save();
-    res.status(201).json(expense);
   } catch (error) {
+    console.error("registerExpense error:", error);
     res.status(500).json({ message: error.message });
   }
 };
 
-export const getAllExpenses = async (req, res) => {
+
+// ExpenseController.js
+export const getLatestExpense = async (req, res) => {
+  const { month } = req.query;
+  if (!month) return res.status(400).json({ message: "Month is required" });
+
   try {
-    const expenses = await ExpenseSchema.find();
-    res.status(200).json(expenses);
+    const latest = await Expense.findOne({
+      createdAt: { $regex: `^${month}` },
+    })
+      .sort({ createdAt: -1 })
+      .exec();
+
+    res.json(latest || null);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
+
+export const getMonthlyExpenses = async (req, res) => {
+  const { month } = req.query;
+  if (!month) return res.status(400).json({ message: "Month is required" });
+
+  const startDate = new Date(`${month}-01`);
+  const endDate = new Date(startDate);
+  endDate.setMonth(endDate.getMonth() + 1);
+
+  try {
+    const expenses = await Expense.find({
+      createdAt: { $gte: startDate, $lt: endDate },
+    }).sort({ createdAt: 1 }); // эхэлсэнээс нь дарааллаар
+    res.json(expenses);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 export const updateExpense = async (req, res) => {
   const { id } = req.params;
   const { expense_amount, description } = req.body;
 
   try {
-    const updatedExpense = await ExpenseSchema.findByIdAndUpdate(
+    const updatedExpense = await Expense.findByIdAndUpdate(
       id,
       { expense_amount, description },
       { new: true }
@@ -89,7 +150,7 @@ export const deleteExpense = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const deletedExpense = await ExpenseSchema.findByIdAndDelete(id);
+    const deletedExpense = await Expense.findByIdAndDelete(id);
 
     if (!deletedExpense) {
       return res.status(404).json({ message: "Expense not found" });

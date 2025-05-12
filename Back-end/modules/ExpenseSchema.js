@@ -1,15 +1,15 @@
 import { Schema, model } from "mongoose";
 
-const expenseSchemaDefinition = new Schema(
+const expenseSchema = new Schema(
   {
-    expense_amount: { type: Number },
+    expense_amount: { type: Number , required: true },
     description: { type: String },
-    firstbalance: { type: Number },
-    balance: { type: Number },
+    first_balance: { type: Number, required: true },
+    balance: { type: Number , required: true },
     createdAt: { type: String },
   },
   { timestamps: true }
 );
 
-const ExpenseSchema = model("ExpenseSchema", expenseSchemaDefinition);
-export default ExpenseSchema;
+const Expense = model("Expense", expenseSchema);
+export default Expense;
