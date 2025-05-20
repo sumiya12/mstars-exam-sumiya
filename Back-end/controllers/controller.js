@@ -168,8 +168,6 @@ export const createBook = async (req, res) => {
       paymenType,
       createdBy,
       description,
-
-    
     } = req.body;
 
     const existingBooking = await Book.findOne({
@@ -210,7 +208,6 @@ export const createBook = async (req, res) => {
         await deductQuantity("paper", item.size, item.count || 0);
       }
     }
-    
 
     // ✅ Ensure canvas is included in req.body before saving
     const bookingData = {
@@ -229,7 +226,7 @@ export const createBook = async (req, res) => {
       pictures,
       canvas,
       paymenType,
-      description, 
+      description,
       createdBy,
       createdAt: new Date(),
     };
@@ -267,39 +264,68 @@ export const createWarehouseItem = async (req, res) => {
   try {
     const { type, size, quantity } = req.body;
 
+    // Validate required fields
+    if (!type || type.trim() === "") {
+      return res
+        .status(400)
+        .json({ success: false, message: "Type is required." });
+    }
+
+    if (!size || size.trim() === "") {
+      return res
+        .status(400)
+        .json({ success: false, message: "Size is required." });
+    }
+
+    if (quantity === undefined || quantity === null || isNaN(quantity)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Valid quantity is required." });
+    }
+
+    const parsedQuantity = Number(quantity);
+    if (parsedQuantity <= 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Quantity must be greater than 0." });
+    }
+
+    // Check for existing item
     const existingItem = await WareHouse.findOne({ type, size });
 
     if (existingItem) {
-      // Update quantity if the item exists
-      existingItem.quantity += quantity;
+      existingItem.quantity += parsedQuantity;
       await existingItem.save();
-      handleResponse(
+
+      return handleResponse(
         res,
         existingItem,
         "Quantity updated successfully",
         "Failed to update quantity"
       );
-    } else {
-      // Create new item only if it is not "paper" or "frame"
-      if (type === "paper" || type === "frame") {
-        return res.status(400).json({
-          success: false,
-          message: "Cannot create item of type paper or frame.",
-        });
-      }
-
-      const newWarehouseItem = await createWarehouse(req); // Ensure this function is defined
-      handleResponse(
-        res,
-        newWarehouseItem,
-        "Item created successfully",
-        "Failed to create item",
-        201
-      );
     }
+
+    // Restrict creation of "paper" or "frame" items
+    if (type === "paper" || type === "frame") {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot create item of type 'paper' or 'frame'.",
+      });
+    }
+
+    const newWarehouseItem = await createWarehouse(req); // Assumes this handles validation and creation
+    return handleResponse(
+      res,
+      newWarehouseItem,
+      "Item created successfully",
+      "Failed to create item",
+      201
+    );
   } catch (error) {
     console.error("Error creating warehouse item:", error);
-    res.status(500).json({ success: false, message: error.message });
+    return res
+      .status(500)
+      .json({ success: false, message: "Server error: " + error.message });
   }
 };
 
@@ -379,7 +405,6 @@ export const deletedCanvas = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
 
 export const getByPhoto = async (req, res) => {
   try {

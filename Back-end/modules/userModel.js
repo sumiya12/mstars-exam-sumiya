@@ -14,7 +14,7 @@ const userSchema = new Schema({
     type: String,
     required: true,
   },
-  // Add any other fields you want, like email, role, etc.
+   
 });
 
 // Hash the password before saving the user

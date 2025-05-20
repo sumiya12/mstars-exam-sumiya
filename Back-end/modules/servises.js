@@ -2,6 +2,7 @@ import Book from "./modul.js";
 import Canvas from "./canvasModul.js";
 import WareHouse from "./warehouseModul.js";
 import { Types } from "mongoose";
+import Calendly from "./calendlyModule.js";
 
 // Helper function for standard error handling
 const handleDatabaseOperation = async (operation) => {
@@ -18,12 +19,16 @@ export const created = async (req) =>
   handleDatabaseOperation(() => new Book(req.body).save());
 export const createCanvas = async (req) =>
   handleDatabaseOperation(() => new Canvas(req.body).save());
+export const createCalendlyEventsService = async (req) =>
+  handleDatabaseOperation(() => new Calendly(req.body).save());
 export const createWarehouse = async (req) =>
   handleDatabaseOperation(() => new WareHouse(req.body).save());
 
 // Read operations
 export const getAllBooks = async () =>
   handleDatabaseOperation(() => Book.find());
+export const getAllPaidInvitees = async () =>
+  handleDatabaseOperation(() => Calendly.find());
 // export const getAllCanvas = async () => handleDatabaseOperation(() => Canvas.find());
 export const getAllWarehouse = async () =>
   handleDatabaseOperation(() => WareHouse.find());
