@@ -3,6 +3,7 @@ import { Schema, model } from "mongoose";
 const calendlySchema = new Schema({
   date: { type: String },
   name: { type: String },
+  package: { type: String },
   email: { type: String },
   phone: { type: String },
   count: { type: String },
