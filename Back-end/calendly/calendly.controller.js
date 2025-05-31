@@ -5,6 +5,7 @@ import {
   getAllPaidInvitees,
 } from "../modules/servises.js";
 import { handleResponse } from "../utils/responseHandler.js";
+import Calendly from "../modules/calendlyModule.js"; // path тохируулн
 export const getCalendlyUser = async (req, res) => {
   try {
     const response = await axios.get("https://api.calendly.com/users/me", {
@@ -19,6 +20,34 @@ export const getCalendlyUser = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch Calendly user info" });
   }
 };
+
+export const checkPhoneDuplicate = async (req, res) => {
+  let { phone, date } = req.query;
+
+  if (!phone || !date) {
+    return res.status(400).json({ success: false, message: "Утас болон өдөр шаардлагатай" });
+  }
+
+  phone = phone.replace(/\D/g, "");
+  if (phone.length === 8) {
+    phone = `+976 ${phone.slice(0, 4)} ${phone.slice(4)}`;
+  } else if (phone.length === 11 && phone.startsWith("976")) {
+    phone = `+976 ${phone.slice(3, 7)} ${phone.slice(7)}`;
+  } else if (phone.length === 12 && phone.startsWith("976")) {
+    phone = `+976 ${phone.slice(3, 7)} ${phone.slice(7)}`;
+  } else if (phone.length === 12 && phone.startsWith("976") === false) {
+    return res.status(400).json({ success: false, message: "Монгол дугаар биш байна" });
+  }
+
+  try {
+    const exists = await Calendly.exists({ phone, date }); // OR date: new Date(date)
+    return res.json({ exists: !!exists, normalizedPhone: phone });
+  } catch (error) {
+    console.error("Phone check error:", error);
+    return res.status(500).json({ success: false, message: "Серверийн алдаа" });
+  }
+};
+
 
 export const getPaidStatus = async (req, res) => {
   try {
@@ -49,174 +78,93 @@ export const createCalendlyEvents = async (req, res) => {
   }
 };
 
-export const getScheduledEvents = async (req, res) => {
+export const getAllScheduledEvents = async (req, res) => {
   try {
-    // Step 1: Get the current user's URI
-    const userRes = await axios.get("https://api.calendly.com/users/me", {
-      headers: {
-        Authorization: `Bearer ${process.env.CALENDLY_TOKEN}`,
-      },
-    });
+    const tokens = [process.env.CALENDLY_TOKEN, process.env.CALENDLY_TOKEN_1];
 
-    const userUri = userRes.data.resource.uri;
+    // Хоёр хэрэглэгчийн мэдээллийг Promise.all ашиглан зэрэг татах
+    const allEnrichedEvents = await Promise.all(
+      tokens.map(async (token) => {
+        try {
+          // Step 1: Get user's URI
+          const userRes = await axios.get("https://api.calendly.com/users/me", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
 
-    // Step 2: Fetch the last 50 scheduled events (most recent first)
-    const eventsRes = await axios.get(
-      `https://api.calendly.com/scheduled_events?user=${userUri}&count=50&sort=start_time:desc`,
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.CALENDLY_TOKEN}`,
-        },
-      }
-    );
+          const userUri = userRes.data.resource.uri;
 
-    const events = eventsRes.data.collection;
+          // Step 2: Get scheduled events
+          const eventsRes = await axios.get(
+            `https://api.calendly.com/scheduled_events?user=${userUri}&count=50&sort=start_time:desc`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
 
-    // Step 3: Fetch invitees for each event (if Calendly native event)
-    const enrichedEvents = await Promise.all(
-      events.map(async (event) => {
-        if (event.uri) {
-          const eventId = event.uri.split("/").pop(); // Extract ID
-          try {
-            const inviteesRes = await axios.get(
-              `https://api.calendly.com/scheduled_events/${eventId}/invitees`,
-              {
-                headers: {
-                  Authorization: `Bearer ${process.env.CALENDLY_TOKEN}`,
-                },
+          const events = eventsRes.data.collection;
+
+          // Step 3: Enrich each event with invitees
+          const enrichedEvents = await Promise.all(
+            events.map(async (event) => {
+              if (event.uri) {
+                const eventId = event.uri.split("/").pop();
+                try {
+                  const inviteesRes = await axios.get(
+                    `https://api.calendly.com/scheduled_events/${eventId}/invitees`,
+                    {
+                      headers: {
+                        Authorization: `Bearer ${token}`,
+                      },
+                    }
+                  );
+
+                  return {
+                    ...event,
+                    invitees: inviteesRes.data.collection,
+                  };
+                } catch (err) {
+                  console.warn(
+                    `Could not fetch invitees for ${eventId}:`,
+                    err.message
+                  );
+                  return {
+                    ...event,
+                    invitees: [],
+                    inviteeFetchError: err.message,
+                  };
+                }
               }
-            );
+              return {
+                ...event,
+                invitees: [],
+                note: "Event has no valid URI or invitee data",
+              };
+            })
+          );
 
-            return {
-              ...event,
-              invitees: inviteesRes.data.collection,
-            };
-          } catch (err) {
-            console.warn(
-              `Could not fetch invitees for ${eventId}:`,
-              err.message
-            );
-            return {
-              ...event,
-              invitees: [],
-              inviteeFetchError: err.message,
-            };
-          }
+          return enrichedEvents;
+        } catch (err) {
+          console.error(`Error fetching events for one token: ${err.message}`);
+          return [];
         }
-        return {
-          ...event,
-          invitees: [],
-          note: "Event has no valid URI or invitee data",
-        };
       })
     );
 
-    // Step 4: Respond with enriched data
+    // events массивуудыг нэг массив болгон нэгтгэх
+    const mergedEvents = allEnrichedEvents.flat();
+
+    // Хариу буцаах
     res.status(200).json({
-      total: enrichedEvents.length,
-      events: enrichedEvents,
+      total: mergedEvents.length,
+      events: mergedEvents,
     });
   } catch (error) {
-    console.error("Error fetching events:", error.message);
-    res.status(500).json({ error: "Failed to fetch scheduled events" });
+    console.error("Error fetching all scheduled events:", error.message);
+    res.status(500).json({ error: "Failed to fetch all scheduled events" });
   }
 };
 
-// export const getInviteeQuestions = async (eventUri) => {
-//   try {
-//     if (typeof eventUri !== "string") {
-//       console.error("Expected eventUri to be a string but got:", eventUri);
-//       throw new Error("Invalid eventUri");
-//     }
-
-//     const eventId = eventUri.split("/").pop(); // get the ID from full URI
-//     if (!eventId) throw new Error("Could not extract event ID");
-
-//     const res = await axios.get(
-//       `https://api.calendly.com/scheduled_events/${eventId}/invitees`,
-//       {
-//         headers: {
-//           Authorization: `Bearer ${process.env.CALENDLY_TOKEN}`,
-//         },
-//       }
-//     );
-
-//     return res.data.collection.map((invitee) => ({
-//       email: invitee.email,
-//       name: invitee.name,
-//       questionsAndAnswers: invitee.questions_and_answers,
-//     }));
-//   } catch (error) {
-//     console.error(
-//       `Error fetching invitees for event ${eventUri}:`,
-//       error.message
-//     );
-//     return [];
-//   }
-// };
-
-// controllers/calendlyController.js
-// export const getInviteesForAllEvents = async (req, res) => {
-//   try {
-//     const userRes = await axios.get("https://api.calendly.com/users/me", {
-//       headers: {
-//         Authorization: `Bearer ${process.env.CALENDLY_TOKEN}`,
-//       },
-//     });
-
-//     const userUri = userRes.data.resource.uri;
-
-//     // Get events
-//     const eventsRes = await axios.get(
-//       `https://api.calendly.com/scheduled_events?user=${userUri}`,
-//       {
-//         headers: {
-//           Authorization: `Bearer ${process.env.CALENDLY_TOKEN}`,
-//         },
-//       }
-//     );
-
-//     const events = eventsRes.data.collection;
-
-//     // Fetch invitees for each event
-//     const inviteesPromises = events.map((event) =>
-//       axios.get(`${event.uri}/invitees`, {
-//         headers: {
-//           Authorization: `Bearer ${process.env.CALENDLY_TOKEN}`,
-//         },
-//       })
-//     );
-
-//     const inviteesResponses = await Promise.all(inviteesPromises);
-//     const allInvitees = inviteesResponses.flatMap(
-//       (resp) => resp.data.collection
-//     );
-
-//     res.status(200).json(allInvitees);
-//   } catch (error) {
-//     console.error("Error fetching invitees:", error.message);
-//     res.status(500).json({ error: "Failed to fetch invitees" });
-//   }
-// };
-
-// export const getEventsByDate = (startDate, endDate) => async (req, res) => {
-//   try {
-//     const response = await axios.get(
-//       "https://api.calendly.com/scheduled_events",
-//       {
-//         headers: {
-//           Authorization: `Bearer ${process.env.CALENDLY_TOKEN}`,
-//         },
-//         params: {
-//           user: "https://api.calendly.com/users/YOUR_USER_ID",
-//           min_start_time: startDate,
-//           max_start_time: endDate,
-//         },
-//       }
-//     );
-
-//     return response.data.collection;
-//   } catch (err) {
-//     console.error("Error getting events by date", err);
-//   }
-// };
