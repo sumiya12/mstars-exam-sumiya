@@ -2,6 +2,7 @@
 import axios from "axios";
 import {
   createCalendlyEventsService,
+  deleteCalendlyEventsService,
   getAllPaidInvitees,
 } from "../modules/servises.js";
 import { handleResponse } from "../utils/responseHandler.js";
@@ -22,10 +23,12 @@ export const getCalendlyUser = async (req, res) => {
 };
 
 export const checkPhoneDuplicate = async (req, res) => {
-  let { phone, date } = req.query;
+  let { phone, created_at } = req.query;
 
-  if (!phone || !date) {
-    return res.status(400).json({ success: false, message: "Утас болон өдөр шаардлагатай" });
+  if (!phone || !created_at) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Утас болон өдөр шаардлагатай" });
   }
 
   phone = phone.replace(/\D/g, "");
@@ -36,18 +39,19 @@ export const checkPhoneDuplicate = async (req, res) => {
   } else if (phone.length === 12 && phone.startsWith("976")) {
     phone = `+976 ${phone.slice(3, 7)} ${phone.slice(7)}`;
   } else if (phone.length === 12 && phone.startsWith("976") === false) {
-    return res.status(400).json({ success: false, message: "Монгол дугаар биш байна" });
+    return res
+      .status(400)
+      .json({ success: false, message: "Монгол дугаар биш байна" });
   }
 
   try {
-    const exists = await Calendly.exists({ phone, date }); // OR date: new Date(date)
+    const exists = await Calendly.exists({ phone, created_at }); // OR date: new Date(date)
     return res.json({ exists: !!exists, normalizedPhone: phone });
   } catch (error) {
     console.error("Phone check error:", error);
     return res.status(500).json({ success: false, message: "Серверийн алдаа" });
   }
 };
-
 
 export const getPaidStatus = async (req, res) => {
   try {
@@ -75,6 +79,23 @@ export const createCalendlyEvents = async (req, res) => {
   } catch (error) {
     console.error("Error creating Calendly event:", error.message);
     res.status(500).json({ error: "Failed to create Calendly event" });
+  }
+};
+
+export const deleteCalendlyEvent = async (req, res) => {
+  const { id } = req.params;
+  try {
+    // Check if the event exists
+    const calendlyEvent = await deleteCalendlyEventsService(id);
+    handleResponse(
+      res,
+      calendlyEvent,
+      "event deleted successfully",
+      "Failed to delete book"
+    );
+  } catch (error) {
+    console.error("Error deleting Calendly event:", error.message);
+    res.status(500).json({ error: "Failed to delete Calendly event" });
   }
 };
 
@@ -167,4 +188,3 @@ export const getAllScheduledEvents = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch all scheduled events" });
   }
 };
-

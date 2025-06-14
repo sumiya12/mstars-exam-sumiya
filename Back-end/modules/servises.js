@@ -190,6 +190,14 @@ export const deleted = async (id) => {
   }
   throw new Error("Invalid ID");
 };
+
+export const deleteCalendlyEventsService = async (id) => {  
+  if (Types.ObjectId.isValid(id)) {
+    return await Calendly.findByIdAndDelete(id);
+  }
+  throw new Error("Invalid ID");
+};
+
 export const deleteCanvas = async (id) => {
   if (Types.ObjectId.isValid(id)) {
     return await Canvas.findByIdAndDelete(id);
