@@ -23,9 +23,8 @@ export const getCalendlyUser = async (req, res) => {
 };
 
 export const checkPhoneDuplicate = async (req, res) => {
-  let { phone, created_at } = req.query;
-
-  if (!phone || !created_at) {
+  let { phone, date } = req.query;
+  if (!phone || !date) {
     return res
       .status(400)
       .json({ success: false, message: "Утас болон өдөр шаардлагатай" });
@@ -45,7 +44,7 @@ export const checkPhoneDuplicate = async (req, res) => {
   }
 
   try {
-    const exists = await Calendly.exists({ phone, created_at }); // OR date: new Date(date)
+    const exists = await Calendly.exists({ phone, date }); // OR date: new Date(date)
     return res.json({ exists: !!exists, normalizedPhone: phone });
   } catch (error) {
     console.error("Phone check error:", error);
