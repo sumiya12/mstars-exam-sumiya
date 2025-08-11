@@ -18,6 +18,7 @@ import {
 import {
   getDailySummary,
   getMonthlySummary,
+  getPaymenTypeOfMonthly,
 } from "../controllers/summaryController.js"; // Adjust as necessary
 
 router.get("/get", getAllBooks);
@@ -33,6 +34,7 @@ router.delete("/delete/:id", deleteBook);
 router.get("/getbyid/:id", getBookById);
 router.get("/daily-summary", getDailySummary);
 router.get("/monthly-summary", getMonthlySummary);
+router.get("/monthly-payment-types", getPaymenTypeOfMonthly);
 router.put("/updatecanvas/:id", updateIsCanvasCheck);
 
 export default router;

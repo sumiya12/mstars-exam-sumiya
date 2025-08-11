@@ -138,6 +138,50 @@ export const getDailySummary = async (req, res) => {
     paymentTypes,
   });
 };
+export const getPaymenTypeOfMonthly = async (req, res) => {
+  try {
+    const bookings = await Book.find({});
+
+    // Group bookings by month like "2025-07"
+    const grouped = {};
+
+    bookings.forEach(
+      ({ prePay = 0, postPay = 0, paymenType, year, day, createdAt }) => {
+        let monthKey = "";
+
+        if (year && day) {
+          const [month] = day.split("-");
+          monthKey = `${year}-${month.padStart(2, "0")}`;
+        } else {
+          const date = new Date(createdAt);
+          const y = date.getFullYear();
+          const m = (date.getMonth() + 1).toString().padStart(2, "0");
+          monthKey = `${y}-${m}`;
+        }
+
+        if (!grouped[monthKey])
+          grouped[monthKey] = { card: 0, cash: 0, account: 0 };
+
+        if (paymenType === "Card") grouped[monthKey].card += prePay += postPay;
+        else if (paymenType === "Cash")
+          grouped[monthKey].cash += prePay += postPay;
+        else if (paymenType === "Account")
+          grouped[monthKey].account += prePay += postPay;
+      }
+    );
+
+    const result = Object.entries(grouped).map(([key, value]) => ({
+      month: key, // e.g. "2025-07"
+      ...value,
+      sum: value.card + value.cash + value.account,
+    }));
+
+    res.json(result.sort((a, b) => a.month.localeCompare(b.month)));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 
 export const getMonthlySummary = async (req, res) => {
   const { month } = req.query;
