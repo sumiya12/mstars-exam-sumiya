@@ -20,6 +20,7 @@ const canvasSchema = new Schema({
   size: { type: String },
   code: { type: String },
   price: { type: Number },
+  realPrice: { type: Number },
 });
 const BookSchema = new Schema({
   year: { type: String },
