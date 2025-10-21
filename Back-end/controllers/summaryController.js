@@ -6,8 +6,13 @@ export const getDailySummary = async (req, res) => {
 
   if (!date) return res.status(400).json({ message: "Date is required" });
 
-  const shortDate = date.slice(5);
-  const bookings = await Book.find({ day: shortDate });
+  const shortDate = date.slice(5); // "10-21" гэх мэт
+  const currentYear = date.slice(0, 4); // "2025"
+
+  const bookings = await Book.find({
+    year: currentYear,
+    day: shortDate,
+  });
 
   // Бүх төрлийн массив цуглуулах
   let giftPhotos = [];
