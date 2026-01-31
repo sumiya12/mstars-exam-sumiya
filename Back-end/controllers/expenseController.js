@@ -1,163 +1,112 @@
-import Book from "../modules/modul.js";
-import Expense from "../modules/ExpenseSchema.js";
-import { created, getAllExpense } from "../services/expenseService.js";
-import  axios from "axios";
+import Expense from "../modules/Expense.js"; // таны folder нэр modules
 
-export const getTotal = async (req, res) => {
-  const { month } = req.query;
-  if (!month) return res.status(400).json({ message: "Month is required" });
+const VALID_BUSINESS = new Set(["PICSHOT", "PICO_KIDS"]);
+const VALID_PAYMENTS = new Set(["CASH", "ACCOUNT", "QPAY"]);
 
-  const [yearStr, monthStr] = month.split("-");
-  const startDate = new Date(`${month}-01`);
-  const endDate = new Date(startDate);
-  endDate.setMonth(endDate.getMonth() + 1);
+function isValidDateString(d) {
+  return typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d);
+}
 
-  const bookings = await Book.find({
-    $or: [
-      { year: yearStr, day: { $regex: `^${monthStr}-` } }, // New bookings with year field
-      {
-        year: { $exists: false }, // Old bookings without year
-        createdAt: { $gte: startDate, $lt: endDate }, // Fallback to createdAt
-      },
-    ],
-  });
-  let prePay = 0;
-  let postPay = 0;
-
-  bookings.forEach((b) => {
-    prePay += b.prePay || 0;
-    postPay += b.postPay || 0;
-  });
-  const total = prePay + postPay;
-
-  res.json({
-    month,
-    total: total.toLocaleString(),
-    prePay: prePay.toLocaleString(),
-    postPay: postPay.toLocaleString(),
-  });
-};
-
-
-export const registerExpense = async (req, res) => {
-  const { expense_amount, description, createdAt } = req.body;
-
+// GET /expense (filters)
+export const listExpenses = async (req, res) => {
   try {
-    const currentMonth = createdAt.slice(0, 7); // "2025-05"
+    const { businessType, date, dateFrom, dateTo } = req.query;
+    const filter = {};
 
-    // Сарын хамгийн сүүлийн expense-г авна
-    const lastExpense = await Expense.findOne({
-      createdAt: { $regex: `^${currentMonth}` },
-    })
-      .sort({ createdAt: -1 })
-      .exec();
+    if (businessType && VALID_BUSINESS.has(businessType)) filter.businessType = businessType;
 
-    let first_balance;
-
-    if (lastExpense) {
-      first_balance = lastExpense.balance;
-    } else {
-      // Энд таны орлого тооцдог API-г дуудаж байна
-      const response = await axios.get(
-        `http://localhost:3001/expense/get?month=${currentMonth}`
-      );
-      const totalStr = response.data?.total || "0";
-      first_balance = parseInt(totalStr.replace(/,/g, ""), 10);
+    if (date && isValidDateString(date)) {
+      filter.date = date;
+    } else if (dateFrom || dateTo) {
+      filter.date = {};
+      if (dateFrom && isValidDateString(dateFrom)) filter.date.$gte = dateFrom;
+      if (dateTo && isValidDateString(dateTo)) filter.date.$lte = dateTo;
+      if (Object.keys(filter.date).length === 0) delete filter.date;
     }
 
-    const balance = first_balance - expense_amount;
+    const items = await Expense.find(filter).sort({ date: -1, createdAt: -1 });
+    return res.json({ ok: true, items });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ ok: false, message: "Server error" });
+  }
+};
 
-    const expenseData = {
-      expense_amount,
+// POST /expense
+export const createExpense = async (req, res) => {
+  try {
+    const { businessType, expenseCategory, amount, paymentType, date, description = "", supplier = "" } =
+      req.body;
+
+    if (!VALID_BUSINESS.has(businessType)) return res.status(400).json({ ok: false, message: "businessType буруу" });
+    if (!expenseCategory) return res.status(400).json({ ok: false, message: "expenseCategory хэрэгтэй" });
+
+    const numAmount = Number(amount);
+    if (!Number.isFinite(numAmount) || numAmount < 0) return res.status(400).json({ ok: false, message: "amount буруу" });
+
+    if (!VALID_PAYMENTS.has(paymentType)) return res.status(400).json({ ok: false, message: "paymentType буруу" });
+    if (!isValidDateString(date)) return res.status(400).json({ ok: false, message: "date формат буруу (YYYY-MM-DD)" });
+
+    const doc = await Expense.create({
+      businessType,
+      expenseCategory,
+      amount: numAmount,
+      paymentType,
+      date,
       description,
-      first_balance,
-      balance,
-      createdAt,
-    };
-
-    await created({ body: expenseData });
-
-    res.status(200).json({
-      success: true,
-      data: expenseData,
-      message: "Зарлага амжилттай бүртгэгдлээ.",
+      supplier: businessType === "PICO_KIDS" ? supplier : "",
     });
-  } catch (error) {
-    console.error("registerExpense error:", error);
-    res.status(500).json({ message: error.message });
+
+    return res.status(201).json({ ok: true, expense: doc });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ ok: false, message: "Server error" });
   }
 };
 
-
-// ExpenseController.js
-export const getLatestExpense = async (req, res) => {
-  const { month } = req.query;
-  if (!month) return res.status(400).json({ message: "Month is required" });
-
-  try {
-    const latest = await Expense.findOne({
-      createdAt: { $regex: `^${month}` },
-    })
-      .sort({ createdAt: -1 })
-      .exec();
-
-    res.json(latest || null);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-
-export const getMonthlyExpenses = async (req, res) => {
-  const { month } = req.query;
-  if (!month) return res.status(400).json({ message: "Month is required" });
-
-  const startDate = new Date(`${month}-01`);
-  const endDate = new Date(startDate);
-  endDate.setMonth(endDate.getMonth() + 1);
-
-  try {
-    const expenses = await Expense.find({
-      createdAt: { $gte: startDate, $lt: endDate },
-    }).sort({ createdAt: 1 }); // эхэлсэнээс нь дарааллаар
-    res.json(expenses);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
+// ✅ PUT /expense/:id  (EDIT)
 export const updateExpense = async (req, res) => {
-  const { id } = req.params;
-  const { expense_amount, description } = req.body;
-
   try {
-    const updatedExpense = await Expense.findByIdAndUpdate(
-      id,
-      { expense_amount, description },
-      { new: true }
-    );
+    const { id } = req.params;
+    const patch = req.body || {};
 
-    if (!updatedExpense) {
-      return res.status(404).json({ message: "Expense not found" });
+    if (patch.businessType && !VALID_BUSINESS.has(patch.businessType)) {
+      return res.status(400).json({ ok: false, message: "businessType буруу" });
+    }
+    if (patch.paymentType && !VALID_PAYMENTS.has(patch.paymentType)) {
+      return res.status(400).json({ ok: false, message: "paymentType буруу" });
+    }
+    if (patch.date && !isValidDateString(patch.date)) {
+      return res.status(400).json({ ok: false, message: "date формат буруу (YYYY-MM-DD)" });
+    }
+    if (patch.amount !== undefined) {
+      const n = Number(patch.amount);
+      if (!Number.isFinite(n) || n < 0) return res.status(400).json({ ok: false, message: "amount буруу" });
+      patch.amount = n;
     }
 
-    res.status(200).json(updatedExpense);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+    // supplier зөвхөн Pico Kids дээр үлдээнэ
+    if (patch.businessType && patch.businessType !== "PICO_KIDS") patch.supplier = "";
+
+    const updated = await Expense.findByIdAndUpdate(id, patch, { new: true });
+    if (!updated) return res.status(404).json({ ok: false, message: "Олдсонгүй" });
+
+    return res.json({ ok: true, expense: updated });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ ok: false, message: "Server error" });
   }
 };
 
+// ✅ DELETE /expense/:id  (DELETE)
 export const deleteExpense = async (req, res) => {
-  const { id } = req.params;
-
   try {
-    const deletedExpense = await Expense.findByIdAndDelete(id);
-
-    if (!deletedExpense) {
-      return res.status(404).json({ message: "Expense not found" });
-    }
-
-    res.status(200).json({ message: "Expense deleted successfully" });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+    const { id } = req.params;
+    const deleted = await Expense.findByIdAndDelete(id);
+    if (!deleted) return res.status(404).json({ ok: false, message: "Олдсонгүй" });
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ ok: false, message: "Server error" });
   }
 };

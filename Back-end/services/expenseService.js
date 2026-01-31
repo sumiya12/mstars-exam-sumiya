@@ -1,4 +1,4 @@
-import Expense from "../modules/ExpenseSchema.js";
+import Expense from "../modules/Expense.js";
 
 const handleDatabaseOperation = async (operation) => {
   try {

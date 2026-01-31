@@ -1,21 +1,11 @@
-import express from "express";
-const { Router } = express;
+import { Router } from "express";
+import { createExpense, listExpenses, updateExpense, deleteExpense } from "../controllers/expenseController.js";
 
 const router = Router();
-import {
-  getTotal,
-  registerExpense,
-  getMonthlyExpenses,
-  getLatestExpense
-} from "../controllers/expenseController.js";
 
-router.get("/get", getTotal);
-router.get("/getall", getMonthlyExpenses);
-router.post("/create", registerExpense);
-router.get("/latest", getLatestExpense);
-// router.put("/update/:id", updatedCanvas);
-// router.delete("/delete/:id", deletedCanvas);
-// router.get("/getbyid/:id", controller.getById);
-// router.get("/getbyday/:date", controller.getByDay);
+router.get("/", listExpenses);
+router.post("/", createExpense);
+router.put("/:id", updateExpense);      // ✅ edit
+router.delete("/:id", deleteExpense);   // ✅ delete
 
 export default router;
