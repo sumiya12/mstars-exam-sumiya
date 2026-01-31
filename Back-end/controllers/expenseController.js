@@ -10,11 +10,12 @@ function isValidDateString(d) {
 // GET /expense (filters)
 export const listExpenses = async (req, res) => {
   try {
-    const { businessType, date, dateFrom, dateTo } = req.query;
+    const { businessType, date, dateFrom, dateTo, category } = req.query;
     const filter = {};
 
-    if (businessType && VALID_BUSINESS.has(businessType)) filter.businessType = businessType;
-
+    if (businessType && VALID_BUSINESS.has(businessType))
+      filter.businessType = businessType;
+    if (category) filter.expenseCategory = category;
     if (date && isValidDateString(date)) {
       filter.date = date;
     } else if (dateFrom || dateTo) {
@@ -35,17 +36,33 @@ export const listExpenses = async (req, res) => {
 // POST /expense
 export const createExpense = async (req, res) => {
   try {
-    const { businessType, expenseCategory, amount, paymentType, date, description = "", supplier = "" } =
-      req.body;
+    const {
+      businessType,
+      expenseCategory,
+      amount,
+      paymentType,
+      date,
+      description = "",
+      supplier = "",
+    } = req.body;
 
-    if (!VALID_BUSINESS.has(businessType)) return res.status(400).json({ ok: false, message: "businessType буруу" });
-    if (!expenseCategory) return res.status(400).json({ ok: false, message: "expenseCategory хэрэгтэй" });
+    if (!VALID_BUSINESS.has(businessType))
+      return res.status(400).json({ ok: false, message: "businessType буруу" });
+    if (!expenseCategory)
+      return res
+        .status(400)
+        .json({ ok: false, message: "expenseCategory хэрэгтэй" });
 
     const numAmount = Number(amount);
-    if (!Number.isFinite(numAmount) || numAmount < 0) return res.status(400).json({ ok: false, message: "amount буруу" });
+    if (!Number.isFinite(numAmount) || numAmount < 0)
+      return res.status(400).json({ ok: false, message: "amount буруу" });
 
-    if (!VALID_PAYMENTS.has(paymentType)) return res.status(400).json({ ok: false, message: "paymentType буруу" });
-    if (!isValidDateString(date)) return res.status(400).json({ ok: false, message: "date формат буруу (YYYY-MM-DD)" });
+    if (!VALID_PAYMENTS.has(paymentType))
+      return res.status(400).json({ ok: false, message: "paymentType буруу" });
+    if (!isValidDateString(date))
+      return res
+        .status(400)
+        .json({ ok: false, message: "date формат буруу (YYYY-MM-DD)" });
 
     const doc = await Expense.create({
       businessType,
@@ -77,19 +94,24 @@ export const updateExpense = async (req, res) => {
       return res.status(400).json({ ok: false, message: "paymentType буруу" });
     }
     if (patch.date && !isValidDateString(patch.date)) {
-      return res.status(400).json({ ok: false, message: "date формат буруу (YYYY-MM-DD)" });
+      return res
+        .status(400)
+        .json({ ok: false, message: "date формат буруу (YYYY-MM-DD)" });
     }
     if (patch.amount !== undefined) {
       const n = Number(patch.amount);
-      if (!Number.isFinite(n) || n < 0) return res.status(400).json({ ok: false, message: "amount буруу" });
+      if (!Number.isFinite(n) || n < 0)
+        return res.status(400).json({ ok: false, message: "amount буруу" });
       patch.amount = n;
     }
 
     // supplier зөвхөн Pico Kids дээр үлдээнэ
-    if (patch.businessType && patch.businessType !== "PICO_KIDS") patch.supplier = "";
+    if (patch.businessType && patch.businessType !== "PICO_KIDS")
+      patch.supplier = "";
 
     const updated = await Expense.findByIdAndUpdate(id, patch, { new: true });
-    if (!updated) return res.status(404).json({ ok: false, message: "Олдсонгүй" });
+    if (!updated)
+      return res.status(404).json({ ok: false, message: "Олдсонгүй" });
 
     return res.json({ ok: true, expense: updated });
   } catch (e) {
@@ -103,7 +125,8 @@ export const deleteExpense = async (req, res) => {
   try {
     const { id } = req.params;
     const deleted = await Expense.findByIdAndDelete(id);
-    if (!deleted) return res.status(404).json({ ok: false, message: "Олдсонгүй" });
+    if (!deleted)
+      return res.status(404).json({ ok: false, message: "Олдсонгүй" });
     return res.json({ ok: true });
   } catch (e) {
     console.error(e);
