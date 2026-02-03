@@ -1,6 +1,6 @@
 import Expense from "../modules/Expense.js"; // таны folder нэр modules
 
-const VALID_BUSINESS = new Set(["PICSHOT", "PICO_KIDS"]);
+const VALID_BUSINESS = new Set(["PICSHOT", "PICO_KIDS", "GROCERIES"]);
 const VALID_PAYMENTS = new Set(["CASH", "ACCOUNT", "QPAY"]);
 
 function isValidDateString(d) {
@@ -59,6 +59,11 @@ export const createExpense = async (req, res) => {
 
     if (!VALID_PAYMENTS.has(paymentType))
       return res.status(400).json({ ok: false, message: "paymentType буруу" });
+    if (businessType === "PICO_KIDS" && !supplier) {
+      return res
+        .status(400)
+        .json({ message: "Supplier required for Pico Kids" });
+    }
     if (!isValidDateString(date))
       return res
         .status(400)
