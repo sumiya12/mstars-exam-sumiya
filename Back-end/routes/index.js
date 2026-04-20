@@ -6,8 +6,9 @@ import routesCanvas from "./canvasRoute.js";
 import routeslogin from "./authRoutes.js";
 import routesGift from "./giftCardRoutes.js";
 import routestime from "./timeLog.js";
-import calendlyRoutes from "./calendly.routes.js"
+import calendlyRoutes from "./calendly.routes.js";
 import expenseRoutes from "./expenseRoute.js";
+import authRoutes from "./authRoutes.js";
 
 router.use("/book", bookRoutes);
 router.use("/warehouse", routesWarehouse);
@@ -17,5 +18,6 @@ router.use("/giftcard", routesGift);
 router.use("/time", routestime);
 router.use("/picshot", calendlyRoutes);
 router.use("/expense", expenseRoutes);
+router.use("/auth", authRoutes);  
 
 export default router;

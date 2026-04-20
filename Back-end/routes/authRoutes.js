@@ -1,12 +1,21 @@
-import express from 'express';
-import { registerUser, loginUser } from '../modules/userService.js'
+// routes/userRoutes.js
+import express from "express";
+import {
+  register,
+  login,
+  removeUser,
+  listUsers,
+} from "../controllers/authController.js";
+
+import authMiddleware from "../midlleware/authMiddleware.js";
 
 const router = express.Router();
 
-// Route for user registration
-router.post('/register', registerUser);
+router.post("/register", register);
+router.post("/login", login);
 
-// Route for user login
-router.post('/login', loginUser);
+// хамгаалалттай routes
+router.get("/", authMiddleware, listUsers);
+router.delete("/:id", authMiddleware, removeUser);
 
 export default router;

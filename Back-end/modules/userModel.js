@@ -1,6 +1,6 @@
 // models/User.js
-import { Schema, model } from 'mongoose';
-import { hash, compare } from 'bcrypt';
+import { Schema, model } from "mongoose";
+import { hash, compare } from "bcrypt";
 
 // Define the User schema
 const userSchema = new Schema({
@@ -10,16 +10,25 @@ const userSchema = new Schema({
     unique: true,
     trim: true,
   },
+  userrealname: {
+    type: String,
+    required: true,
+    trim: true,
+  },
   password: {
     type: String,
     required: true,
   },
-   
+  role: {
+    type: String,
+    enum: ["admin", "employee"],
+    default: "employee",
+  },
 });
 
 // Hash the password before saving the user
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
+userSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
   this.password = await hash(this.password, 10);
   next();
 });
@@ -30,6 +39,6 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
 };
 
 // Create the User model
-const User = model('User', userSchema);
+const User = model("User", userSchema);
 
 export default User;
