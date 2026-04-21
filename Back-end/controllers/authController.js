@@ -34,6 +34,9 @@ export const login = async (req, res) => {
 
 export const removeUser = async (req, res) => {
   try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Forbidden" });
+    }
     await deleteUser(req.params.id);
     res.json({ success: true, message: "User deleted" });
   } catch (err) {

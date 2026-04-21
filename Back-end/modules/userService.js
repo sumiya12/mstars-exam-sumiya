@@ -30,7 +30,25 @@ export const loginUser = async (username, password, userrealname) => {
 };
 
 export const deleteUser = async (userId) => {
-  return await User.findByIdAndDelete(userId);
+  const userToDelete = await User.findById(req.params.id);
+
+  if (!userToDelete) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  // 🔥 ADMIN USER УСТГАХЫГ ХОРИГЛОНО
+  if (userToDelete.role === "admin") {
+    return res.status(403).json({ message: "Admin user устгах боломжгүй" });
+  }
+
+  // зөвхөн admin delete хийж болно
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "cant delete admin user" });
+  }
+
+  await User.findByIdAndDelete(req.params.id);
+
+  res.json({ success: true });
 };
 
 export const getUsers = async () => {
