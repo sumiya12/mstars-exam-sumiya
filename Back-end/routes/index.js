@@ -9,6 +9,7 @@ import routestime from "./timeLog.js";
 import calendlyRoutes from "./calendly.routes.js";
 import expenseRoutes from "./expenseRoute.js";
 import authRoutes from "./authRoutes.js";
+import packageRoutes from "./packageRoutes.js";
 
 router.use("/book", bookRoutes);
 router.use("/warehouse", routesWarehouse);
@@ -19,5 +20,6 @@ router.use("/time", routestime);
 router.use("/picshot", calendlyRoutes);
 router.use("/expense", expenseRoutes);
 router.use("/auth", authRoutes);  
+router.use("/package", packageRoutes);  
 
 export default router;
