@@ -22,6 +22,7 @@ const canvasSchema = new Schema({
   price: { type: Number },
   realPrice: { type: Number },
 });
+
 const BookSchema = new Schema({
   year: { type: String },
   day: { type: String },
@@ -39,7 +40,11 @@ const BookSchema = new Schema({
   canvas: [canvasSchema],
   paymenType: { type: String },
   description: { type: String },
-  createdBy: { type: String },
+  createdBy: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
   createdAt: { type: Date, default: Date.now },
   pickedUpCanvas: { type: Boolean, default: false },
 });

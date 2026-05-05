@@ -21,7 +21,7 @@ import { handleResponse } from "../utils/responseHandler.js";
 import WareHouse from "../modules/warehouseModul.js";
 import Book from "../modules/modul.js";
 import Canvas from "../modules/canvasModul.js";
-
+import User from "../modules/userModel.js";
 export const getAllBookForChart = async (req, res) => {
   try {
     const books = await Book.find();
@@ -37,30 +37,34 @@ export const getAllBookForChart = async (req, res) => {
 };
 
 export const getAllBooks = async (req, res) => {
-  const page = parseInt(req.query.page) || 1; // Current page
-  const limit = parseInt(req.query.limit) || 50; // Number of items per page
-  const offset = (page - 1) * limit; // Calculate offset
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 50;
+  const offset = (page - 1) * limit;
 
   try {
-    const totalBooks = await Book.countDocuments(); // Get total number of books
-    const books = await Book.find()
-      .sort({ _id: -1 }) // Sort by _id in ascending order (chronologically by creation)
-      .skip(offset) // Skip the offset
+    const query = {};
+
+    const totalBooks = await Book.countDocuments(query);
+
+    const books = await Book.find(query)
+      .populate("createdBy", "username userrealname role")
+      .sort({ createdAt: -1 })
+      .skip(offset)
       .limit(limit);
+
     res.json({
       success: true,
       message: "Successfully fetched books",
       data: books,
       total: totalBooks,
       page,
-      totalPages: Math.ceil(totalBooks / limit), // Calculate total pages
+      totalPages: Math.ceil(totalBooks / limit),
     });
   } catch (error) {
     console.error("Error fetching all books:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
 export const getAllCanvas = async (req, res) => {
   const page = parseInt(req.query.page) || 1; // Current page
   const limit = parseInt(req.query.limit) || 50; // Number of items per page
@@ -150,6 +154,23 @@ const deductQuantity = async (type, size, count) => {
 
 export const createBook = async (req, res) => {
   try {
+    const userId = req.user?._id || req.user?.id;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized: user not found in request",
+      });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
     const {
       year,
       day,
@@ -160,17 +181,17 @@ export const createBook = async (req, res) => {
       addPayment,
       minusPayment,
       giftPhoto,
-      frame,
-      paper,
-      frameAndPaper,
-      pictures,
-      canvas, // ✅ Include canvas here
+      frame = [],
+      paper = [],
+      frameAndPaper = [],
+      pictures = [],
+      canvas = [],
       paymenType,
-      createdBy,
       description,
     } = req.body;
 
     const existingBooking = await Book.findOne({
+      year,
       day,
       bookedTime,
       packageName,
@@ -179,37 +200,29 @@ export const createBook = async (req, res) => {
     if (existingBooking) {
       return res.status(400).json({
         success: false,
-        message:
-          "Booking already exists for this day and time and also package.",
+        message: "Booking already exists for this day, time and package.",
       });
     }
 
     const processDeductions = async (items, type) => {
-      for (const item of items) {
-        await deductQuantity(type, item.size, item.count);
+      for (const item of items || []) {
+        if (item?.size && Number(item?.count) > 0) {
+          await deductQuantity(type, item.size, Number(item.count));
+        }
       }
     };
 
-    if (pictures?.length) {
-      await processDeductions(pictures, "paper");
-    }
+    await processDeductions(pictures, "paper");
+    await processDeductions(paper, "paper");
+    await processDeductions(frame, "frame");
 
-    if (paper?.length) {
-      await processDeductions(paper, "paper");
-    }
-
-    if (frame?.length) {
-      await processDeductions(frame, "frame");
-    }
-
-    if (frameAndPaper?.length) {
-      for (const item of frameAndPaper) {
-        await deductQuantity("frame", item.size, item.count || 0);
-        await deductQuantity("paper", item.size, item.count || 0);
+    for (const item of frameAndPaper || []) {
+      if (item?.size && Number(item?.count) > 0) {
+        await deductQuantity("frame", item.size, Number(item.count));
+        await deductQuantity("paper", item.size, Number(item.count));
       }
     }
 
-    // ✅ Ensure canvas is included in req.body before saving
     const bookingData = {
       year,
       day,
@@ -227,13 +240,13 @@ export const createBook = async (req, res) => {
       canvas,
       paymenType,
       description,
-      createdBy,
+      createdBy: user._id,
       createdAt: new Date(),
     };
 
-    const booking = await created({ body: bookingData });
+    const booking = await Book.create(bookingData);
 
-    handleResponse(
+    return handleResponse(
       res,
       booking,
       "Booking created successfully",
@@ -242,7 +255,10 @@ export const createBook = async (req, res) => {
     );
   } catch (error) {
     console.error("Error creating book:", error);
-    res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 

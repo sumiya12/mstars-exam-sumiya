@@ -5,6 +5,7 @@ import {
   login,
   removeUser,
   listUsers,
+  refreshAccessToken 
 } from "../controllers/authController.js";
 
 import authMiddleware from "../midlleware/authMiddleware.js";
@@ -13,6 +14,7 @@ const router = express.Router();
 
 router.post("/register", register);
 router.post("/login", login);
+router.post("/refresh", refreshAccessToken);
 
 // хамгаалалттай routes
 router.get("/", authMiddleware, listUsers);

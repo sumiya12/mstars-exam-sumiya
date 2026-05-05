@@ -10,6 +10,7 @@ import calendlyRoutes from "./calendly.routes.js";
 import expenseRoutes from "./expenseRoute.js";
 import authRoutes from "./authRoutes.js";
 import packageRoutes from "./packageRoutes.js";
+import partyOrderRoutes from "./partyOrderRoutes.js";
 
 router.use("/book", bookRoutes);
 router.use("/warehouse", routesWarehouse);
@@ -21,5 +22,6 @@ router.use("/picshot", calendlyRoutes);
 router.use("/expense", expenseRoutes);
 router.use("/auth", authRoutes);  
 router.use("/package", packageRoutes);  
+router.use("/party-order", partyOrderRoutes);
 
 export default router;

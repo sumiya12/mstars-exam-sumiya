@@ -20,6 +20,7 @@ import {
   getMonthlySummary,
   getPaymenTypeOfMonthly,
 } from "../controllers/summaryController.js"; // Adjust as necessary
+import authMiddleware from "../midlleware/authMiddleware.js";
 
 router.get("/get", getAllBooks);
 router.get("/getall", getAllBookForChart);
@@ -28,7 +29,7 @@ router.get("/getbyphoto", getByPhoto);
 router.get("/getbycardtype", getByCardType);
 router.get("/getbycashtype", getByCashType);
 router.get("/getbyaccounttype", getByAccountType);
-router.post("/create", createBook);
+router.post("/create", authMiddleware, createBook);
 router.put("/update/:id", updateBook);
 router.delete("/delete/:id", deleteBook);
 router.get("/getbyid/:id", getBookById);

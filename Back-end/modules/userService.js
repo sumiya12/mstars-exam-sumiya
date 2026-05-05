@@ -22,9 +22,16 @@ export const loginUser = async (username, password, userrealname) => {
   const isMatch = await compare(password, user.password);
   if (!isMatch) throw new Error("Invalid username or password");
 
-  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-    expiresIn: "1h",
-  });
+  const token = jwt.sign(
+    {
+      _id: user._id,
+      username: user.username,
+      userrealname: user.userrealname,
+      role: user.role,
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: "1h" }
+  );
 
   return { token, user, userrealname };
 };
