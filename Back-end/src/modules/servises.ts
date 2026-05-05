@@ -92,27 +92,48 @@ export const getByAccountType = (req) => getByPaymentType("Account", req);
 // Update operations
 export const update = async (id, req) => {
   const {
+    year,
+    day,
+    bookedTime,
     packageName,
     prePay,
     postPay,
+    addPayment,
+    minusPayment,
     giftPhoto,
     pictures,
     paper,
     frame,
     frameAndPaper,
+    canvas,
     paymenType,
     description,
+    pickedUpCanvas,
   } = req.body;
 
   try {
-    const updateData: Record<string, any> = {
-      packageName: packageName,
-      prePay: prePay,
-      postPay: postPay,
-      giftPhoto: giftPhoto,
-      paymenType: paymenType,
-      description: description,
+    const updateData: Record<string, any> = {};
+    const scalarFields: Record<string, any> = {
+      year,
+      day,
+      bookedTime,
+      packageName,
+      prePay,
+      postPay,
+      addPayment,
+      minusPayment,
+      giftPhoto,
+      paymenType,
+      description,
+      pickedUpCanvas,
     };
+
+    Object.entries(scalarFields).forEach(([key, value]) => {
+      if (value !== undefined) {
+        updateData[key] = value;
+      }
+    });
+
     if (Array.isArray(pictures)) {
       updateData.pictures = pictures;
     }
@@ -124,6 +145,9 @@ export const update = async (id, req) => {
     }
     if (Array.isArray(frameAndPaper)) {
       updateData.frameAndPaper = frameAndPaper;
+    }
+    if (Array.isArray(canvas)) {
+      updateData.canvas = canvas;
     }
 
     await Book.findByIdAndUpdate(id, { $set: updateData });
