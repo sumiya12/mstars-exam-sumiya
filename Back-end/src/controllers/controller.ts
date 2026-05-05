@@ -8,7 +8,6 @@ import {
   getByCashType as getByCashTypes,
   getByAccountType as getByAccountTypes,
   deleted,
-  getById as getByIdService,
   getAllWarehouse as getAllWarehouseService,
   createWarehouse,
   createCanvas as createCanvasService,
@@ -22,9 +21,15 @@ import WareHouse from "../modules/warehouseModul.js";
 import Book from "../modules/modul.js";
 import Canvas from "../modules/canvasModul.js";
 import User from "../modules/userModel.js";
+import {
+  buildCreatedByMatchExpression,
+  createdByPopulateOptions,
+} from "../utils/createdBy.js";
 export const getAllBookForChart = async (req, res) => {
   try {
-    const books = await Book.find();
+    const books = await Book.find()
+      .populate(createdByPopulateOptions)
+      .lean();
     res.json({
       success: true,
       message: "Successfully fetched books",
@@ -52,8 +57,12 @@ export const getAllBooks = async (req, res) => {
       query.paymenType = req.query.paymentType;
     }
 
-    if (req.query.createdBy) {
-      query.createdBy = req.query.createdBy;
+    const createdByMatchExpression = await buildCreatedByMatchExpression(
+      req.query.createdBy
+    );
+
+    if (createdByMatchExpression) {
+      query.$expr = createdByMatchExpression;
     }
 
     if (req.query.description) {
@@ -81,7 +90,8 @@ export const getAllBooks = async (req, res) => {
     const totalBooks = await Book.countDocuments(query);
 
     const books = await Book.find(query)
-      .populate("createdBy", "username userrealname role")
+      .populate(createdByPopulateOptions)
+      .lean()
       .sort({ createdAt: -1 })
       .skip(offset)
       .limit(limit);
@@ -145,7 +155,9 @@ export const getAllWarehouses = async (req, res) => {
 export const getBookById = async (req, res) => {
   const { id } = req.params;
   try {
-    const book = await getByIdService(id);
+    const book = await Book.findById(id)
+      .populate(createdByPopulateOptions)
+      .lean();
     if (book) {
       res.status(200).json({
         success: true,
