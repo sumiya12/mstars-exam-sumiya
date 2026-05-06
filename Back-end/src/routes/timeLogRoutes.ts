@@ -1,10 +1,10 @@
-import express from "express";
+﻿import express from "express";
 import {
   getTimeLogsByDate,
   createTimeLog,
   deleteTimeLog,
   getallTimeLogs,
-} from "../controllers/timeLogController.js"; // Adjust the import path as necessary
+} from "../controllers/timeLogController.js";
 const router = express.Router();
 
 router.get("/get", getTimeLogsByDate); // /api/timelogs?date=YYYY-MM-DD

@@ -1,4 +1,4 @@
-import pkg from "express";
+﻿import pkg from "express";
 const { Router } = pkg;
 const router = Router();
 import {
@@ -14,12 +14,12 @@ import {
   getByCashType,
   getAllBookForChart,
   updateIsCanvasCheck,
-} from "../controllers/controller.js"; // Adjust as necessary
+} from "../controllers/studioController.js";
 import {
   getDailySummary,
   getMonthlySummary,
   getPaymenTypeOfMonthly,
-} from "../controllers/summaryController.js"; // Adjust as necessary
+} from "../controllers/summaryController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 
 router.get("/get", getAllBooks);

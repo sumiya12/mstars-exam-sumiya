@@ -1,8 +1,8 @@
-import express from 'express';
+﻿import express from 'express';
 const { Router } = express;
 
 const router = Router();
-import { getAllCanvas, createNewCanvas, deletedCanvas, updatedCanvas } from "../controllers/controller.js";
+import { getAllCanvas, createNewCanvas, deletedCanvas, updatedCanvas } from "../controllers/studioController.js";
 
 router.get("/get", getAllCanvas);
 router.post("/create", createNewCanvas);

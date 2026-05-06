@@ -1,4 +1,4 @@
-import {
+﻿import {
   created,
   getAllBooks as get,
   update,
@@ -15,12 +15,12 @@ import {
   deleteCanvas,
   updateCanvas,
   updateCanvasCheck,
-} from "../modules/servises.js";
+} from "../services/studioService.js";
 import { handleResponse } from "../utils/responseHandler.js";
-import WareHouse from "../modules/warehouseModul.js";
-import Book from "../modules/modul.js";
-import Canvas from "../modules/canvasModul.js";
-import User from "../modules/userModel.js";
+import WareHouse from "../models/WarehouseItem.js";
+import Book from "../models/Book.js";
+import Canvas from "../models/Canvas.js";
+import User from "../models/User.js";
 import {
   buildCreatedByMatchExpression,
   createdByPopulateOptions,

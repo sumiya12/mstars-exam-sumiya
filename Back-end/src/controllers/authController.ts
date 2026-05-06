@@ -1,9 +1,9 @@
-import bcrypt from "bcrypt";
+﻿import bcrypt from "bcrypt";
 import type { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import type { AuthenticatedRequest } from "../middleware/authMiddleware.js";
-import User from "../modules/userModel.js";
-import { deleteUser, getUsers, registerUser } from "../modules/userService.js";
+import User from "../models/User.js";
+import { deleteUser, getUsers, registerUser } from "../services/userService.js";
 
 type UserRole = "admin" | "employee";
 

@@ -1,7 +1,7 @@
-import { Types, disconnect } from "mongoose";
+﻿import { Types, disconnect } from "mongoose";
 import { connectDatabase } from "../config/db.js";
-import Book from "../modules/modul.js";
-import User from "../modules/userModel.js";
+import Book from "../models/Book.js";
+import User from "../models/User.js";
 
 const findUserForLegacyValue = async (value: string) => {
   if (Types.ObjectId.isValid(value)) {

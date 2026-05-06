@@ -1,4 +1,4 @@
-import Package from "../modules/Package.js";
+﻿import Package from "../models/Package.js";
 import { validatePackage } from "../utils/validator.js";
 
 export const getAll = async () => {

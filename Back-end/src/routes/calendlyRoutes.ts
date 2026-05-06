@@ -1,4 +1,4 @@
-import express from "express";
+﻿import express from "express";
 import {
   getCalendlyUser,
   getAllScheduledEvents,
@@ -6,7 +6,7 @@ import {
   getPaidStatus,
   checkPhoneDuplicate,
   deleteCalendlyEvent,
-} from "../calendly/calendly.controller.js";
+} from "../controllers/calendlyController.js";
 
 const router = express.Router();
 

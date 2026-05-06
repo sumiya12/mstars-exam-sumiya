@@ -1,4 +1,4 @@
-import Expense from "../modules/Expense.js";
+﻿import Expense from "../models/Expense.js";
 
 const handleDatabaseOperation = async (operation) => {
   try {

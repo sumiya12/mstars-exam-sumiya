@@ -1,5 +1,5 @@
-import { Types } from "mongoose";
-import User from "../modules/userModel.js";
+﻿import { Types } from "mongoose";
+import User from "../models/User.js";
 
 export const createdByPopulateOptions = {
   path: "createdBy",

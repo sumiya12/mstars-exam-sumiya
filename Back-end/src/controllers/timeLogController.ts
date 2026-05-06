@@ -1,4 +1,4 @@
-import TimeLog from "../modules/TimeLog.js";
+﻿import TimeLog from "../models/TimeLog.js";
 import dayjs from "dayjs";
 
 export const getTimeLogsByDate = async (req, res) => {

@@ -1,6 +1,6 @@
-import { compare } from "bcrypt";
+﻿import { compare } from "bcrypt";
 import jwt from "jsonwebtoken";
-import User from "./userModel.js";
+import User from "../models/User.js";
 
 type UserRole = "admin" | "employee";
 type ServiceError = Error & { statusCode?: number };

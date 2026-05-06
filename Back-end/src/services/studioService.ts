@@ -1,8 +1,8 @@
-import Book from "./modul.js";
-import Canvas from "./canvasModul.js";
-import WareHouse from "./warehouseModul.js";
+﻿import Book from "../models/Book.js";
+import Canvas from "../models/Canvas.js";
+import WareHouse from "../models/WarehouseItem.js";
 import { Types } from "mongoose";
-import Calendly from "./calendlyModule.js";
+import Calendly from "../models/CalendlyEvent.js";
 
 // Helper function for standard error handling
 const handleDatabaseOperation = async (operation: () => any) => {

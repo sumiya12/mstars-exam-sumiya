@@ -1,4 +1,4 @@
-import GiftCard from "../modules/giftModel.js"; "./index.js";
+﻿import GiftCard from "../models/GiftCard.js"; "./index.js";
 
 import { Types } from "mongoose";
 

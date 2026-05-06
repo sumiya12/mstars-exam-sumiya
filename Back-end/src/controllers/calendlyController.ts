@@ -1,12 +1,11 @@
-// controllers/calendlyController.js
-import axios from "axios";
+﻿import axios from "axios";
 import {
   createCalendlyEventsService,
   deleteCalendlyEventsService,
   getAllPaidInvitees,
-} from "../modules/servises.js";
+} from "../services/studioService.js";
 import { handleResponse } from "../utils/responseHandler.js";
-import Calendly from "../modules/calendlyModule.js"; // path тохируулн
+import Calendly from "../models/CalendlyEvent.js";
 export const getCalendlyUser = async (req, res) => {
   try {
     const response = await axios.get("https://api.calendly.com/users/me", {

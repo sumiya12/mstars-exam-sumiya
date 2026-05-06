@@ -1,4 +1,4 @@
-import Expense from "../modules/Expense.js"; // таны folder нэр modules
+﻿import Expense from "../models/Expense.js";
 
 const VALID_BUSINESS = new Set(["PICSHOT", "PICO_KIDS", "GROCERIES"]);
 const VALID_PAYMENTS = new Set(["CASH", "ACCOUNT", "QPAY"]);

@@ -1,6 +1,6 @@
-import cors from "cors";
+﻿import cors from "cors";
 import express from "express";
-import calendlyRoutes from "./routes/calendly.routes.js";
+import calendlyRoutes from "./routes/calendlyRoutes.js";
 import routes from "./routes/index.js";
 
 export const createApp = () => {

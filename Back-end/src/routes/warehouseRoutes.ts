@@ -1,5 +1,5 @@
-import express from "express";
-import { getAllWarehouses, createWarehouseItem } from "../controllers/controller.js";
+﻿import express from "express";
+import { getAllWarehouses, createWarehouseItem } from "../controllers/studioController.js";
 const { Router } = express;
 
 const router = Router();

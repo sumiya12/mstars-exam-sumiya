@@ -1,5 +1,5 @@
-import Book from "../modules/modul.js";
-import WareHouse from "../modules/warehouseModul.js";
+﻿import Book from "../models/Book.js";
+import WareHouse from "../models/WarehouseItem.js";
 
 export const getDailySummary = async (req, res) => {
   const { date } = req.query;
