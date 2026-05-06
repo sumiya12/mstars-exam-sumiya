@@ -2,29 +2,46 @@
   created,
   getAllBooks as get,
   update,
-  getByCanvas as getBooksByCanvas,
-  getByPhoto as getPhotos,
-  getByCardType as getByCardTypes,
-  getByCashType as getByCashTypes,
-  getByAccountType as getByAccountTypes,
   deleted,
   getAllWarehouse as getAllWarehouseService,
   createWarehouse,
-  createCanvas as createCanvasService,
-  getByCanvas as getCanvas,
-  deleteCanvas,
-  updateCanvas,
   updateCanvasCheck,
 } from "../services/studioService.js";
 import { handleResponse } from "../utils/responseHandler.js";
 import WareHouse from "../models/WarehouseItem.js";
 import Book from "../models/Book.js";
-import Canvas from "../models/Canvas.js";
 import User from "../models/User.js";
 import {
   buildCreatedByMatchExpression,
   createdByPopulateOptions,
 } from "../utils/createdBy.js";
+
+const normalizePaymentBreakdown = (paymentBreakdown?: any) => ({
+  cash: Number(paymentBreakdown?.cash || 0),
+  card: Number(paymentBreakdown?.card || 0),
+  account: Number(paymentBreakdown?.account || 0),
+});
+
+const getPrimaryPaymentType = (paymentBreakdown?: any, fallback = "") => {
+  const normalized = normalizePaymentBreakdown(paymentBreakdown);
+  const activeTypes = Object.entries(normalized).filter(
+    ([, value]) => Number(value) > 0
+  );
+
+  if (activeTypes.length > 1) return "Mixed";
+  if (activeTypes.length === 1) {
+    const [type] = activeTypes[0];
+    const labels: Record<string, string> = {
+      cash: "Cash",
+      card: "Card",
+      account: "Account",
+    };
+    return labels[type] || fallback;
+  }
+
+  return fallback;
+};
+
 export const getAllBookForChart = async (req, res) => {
   try {
     const books = await Book.find()
@@ -49,12 +66,21 @@ export const getAllBooks = async (req, res) => {
   try {
     const query: Record<string, any> = {};
 
+    if (req.query.year) {
+      query.year = String(req.query.year);
+    }
+
     if (req.query.day) {
       query.day = req.query.day;
     }
 
     if (req.query.paymentType) {
-      query.paymenType = req.query.paymentType;
+      const paymentType = String(req.query.paymentType);
+      const paymentBreakdownKey = paymentType.toLowerCase();
+      query.$or = [
+        { paymenType: paymentType },
+        { [`paymentBreakdown.${paymentBreakdownKey}`]: { $gt: 0 } },
+      ];
     }
 
     const createdByMatchExpression = await buildCreatedByMatchExpression(
@@ -109,34 +135,6 @@ export const getAllBooks = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-export const getAllCanvas = async (req, res) => {
-  const page = parseInt(req.query.page) || 1; // Current page
-  const limit = parseInt(req.query.limit) || 50; // Number of items per page
-  const offset = (page - 1) * limit; // Calculate offset
-
-  try {
-    const totalCanvas = await Canvas.countDocuments();
-
-    const canvases = await Canvas.find()
-      .sort({ _id: -1 }) // Sort by _id in descending order (latest first)
-      .skip(offset) // Skip the offset
-      .limit(limit);
-    res.json({
-      success: true,
-      message: "Successfully fetched Canvases",
-      data: canvases,
-      total: totalCanvas,
-      page,
-      totalPages: Math.ceil(totalCanvas / limit),
-    });
-    // const canvas = await getCanvas();
-    // handleResponse(res, canvas, "Successfully fetched all canvases", "Failed to fetch canvases");
-  } catch (error) {
-    console.error("Error fetching all canvases:", error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
 export const getAllWarehouses = async (req, res) => {
   try {
     const warehouseItems = await getAllWarehouseService(req);
@@ -148,27 +146,6 @@ export const getAllWarehouses = async (req, res) => {
     );
   } catch (error) {
     console.error("Error fetching warehouse items:", error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-export const getBookById = async (req, res) => {
-  const { id } = req.params;
-  try {
-    const book = await Book.findById(id)
-      .populate(createdByPopulateOptions)
-      .lean();
-    if (book) {
-      res.status(200).json({
-        success: true,
-        data: book,
-        message: "Book retrieved successfully.",
-      });
-    } else {
-      res.status(404).json({ success: false, message: "Book not found." });
-    }
-  } catch (error) {
-    console.error("Error fetching book by ID:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -233,8 +210,15 @@ export const createBook = async (req, res) => {
       pictures = [],
       canvas = [],
       paymenType,
+      paymentBreakdown,
       description,
     } = req.body;
+
+    const normalizedPaymentBreakdown = normalizePaymentBreakdown(paymentBreakdown);
+    const resolvedPaymentType = getPrimaryPaymentType(
+      normalizedPaymentBreakdown,
+      paymenType
+    );
 
     const existingBooking = await Book.findOne({
       year,
@@ -274,7 +258,7 @@ export const createBook = async (req, res) => {
       day,
       bookedTime,
       packageName,
-      prePay,
+      prePay: Number(prePay || 0),
       postPay,
       addPayment,
       minusPayment,
@@ -284,7 +268,8 @@ export const createBook = async (req, res) => {
       frameAndPaper,
       pictures,
       canvas,
-      paymenType,
+      paymenType: resolvedPaymentType,
+      paymentBreakdown: normalizedPaymentBreakdown,
       description,
       createdBy: user._id,
       createdAt: new Date(),
@@ -305,20 +290,6 @@ export const createBook = async (req, res) => {
       success: false,
       message: error.message,
     });
-  }
-};
-
-export const createNewCanvas = async (req, res) => {
-  try {
-    const canvas = await createCanvasService(req);
-    res.status(200).json({
-      success: true,
-      data: canvas,
-      message: "Canvas created successfully.",
-    });
-  } catch (error) {
-    console.error("Error creating canvas:", error);
-    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -422,22 +393,6 @@ export const updateIsCanvasCheck = async (req, res) => {
   }
 };
 
-export const updatedCanvas = async (req, res) => {
-  const { id } = req.params;
-  try {
-    const updatedCanvas = await updateCanvas(id, req);
-    handleResponse(
-      res,
-      updatedCanvas,
-      "Book updated successfully",
-      "Failed to update book"
-    );
-  } catch (error) {
-    console.error("Error updating book:", error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
 export const deleteBook = async (req, res) => {
   try {
     const { id } = req.params;
@@ -450,80 +405,6 @@ export const deleteBook = async (req, res) => {
     );
   } catch (error) {
     console.error("Error deleting book:", error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-export const deletedCanvas = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const canvas = await deleteCanvas(id);
-    handleResponse(
-      res,
-      canvas,
-      "Book deleted successfully",
-      "Failed to delete book"
-    );
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-export const getByPhoto = async (req, res) => {
-  try {
-    const photos = await getPhotos(req);
-    handleResponse(
-      res,
-      photos,
-      "Successfully fetched photos",
-      "Failed to fetch photos"
-    );
-  } catch (error) {
-    console.error("Error fetching photos:", error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-export const getByCardType = async (req, res) => {
-  try {
-    const books = await getByCardTypes(req);
-    handleResponse(
-      res,
-      books,
-      "Successfully fetched books by card type",
-      "Failed to fetch books by card type"
-    );
-  } catch (error) {
-    console.error("Error fetching books by card type:", error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-export const getByCashType = async (req, res) => {
-  try {
-    const books = await getByCashTypes(req);
-    handleResponse(
-      res,
-      books,
-      "Successfully fetched books by cash type",
-      "Failed to fetch books by cash type"
-    );
-  } catch (error) {
-    console.error("Error fetching books by cash type:", error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-export const getByAccountType = async (req, res) => {
-  try {
-    const books = await getByAccountTypes(req);
-    handleResponse(
-      res,
-      books,
-      "Successfully fetched books by account type",
-      "Failed to fetch books by account type"
-    );
-  } catch (error) {
-    console.error("Error fetching books by account type:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };

@@ -1,6 +1,15 @@
 ﻿import Book from "../models/Book.js";
 import WareHouse from "../models/WarehouseItem.js";
 
+const getPaymentAmount = (book, type: "Cash" | "Card" | "Account") => {
+  const splitKey = type.toLowerCase();
+  const splitAmount = Number(book.paymentBreakdown?.[splitKey] || 0);
+
+  if (splitAmount > 0) return splitAmount;
+
+  return book.paymenType === type ? (book.prePay || 0) + (book.postPay || 0) : 0;
+};
+
 export const getDailySummary = async (req, res) => {
   const { date } = req.query;
 
@@ -109,10 +118,9 @@ export const getDailySummary = async (req, res) => {
     prePay += b.prePay || 0;
     postPay += b.postPay || 0;
 
-    const type = b.paymenType;
-    if (type && paymentTypes.hasOwnProperty(type)) {
-      paymentTypes[type]++;
-    }
+    paymentTypes.Cash += getPaymentAmount(b, "Cash");
+    paymentTypes.Card += getPaymentAmount(b, "Card");
+    paymentTypes.Account += getPaymentAmount(b, "Account");
   });
 
   const total = prePay + postPay;
@@ -150,8 +158,8 @@ export const getPaymenTypeOfMonthly = async (req, res) => {
     // Group bookings by month like "2025-07"
     const grouped: Record<string, { card: number; cash: number; account: number }> = {};
 
-    bookings.forEach(
-      ({ prePay = 0, postPay = 0, paymenType, year, day, createdAt }) => {
+    bookings.forEach((book) => {
+        const { year, day, createdAt } = book;
         let monthKey = "";
 
         if (year && day) {
@@ -167,11 +175,9 @@ export const getPaymenTypeOfMonthly = async (req, res) => {
         if (!grouped[monthKey])
           grouped[monthKey] = { card: 0, cash: 0, account: 0 };
 
-        if (paymenType === "Card") grouped[monthKey].card += prePay += postPay;
-        else if (paymenType === "Cash")
-          grouped[monthKey].cash += prePay += postPay;
-        else if (paymenType === "Account")
-          grouped[monthKey].account += prePay += postPay;
+        grouped[monthKey].card += getPaymentAmount(book, "Card");
+        grouped[monthKey].cash += getPaymentAmount(book, "Cash");
+        grouped[monthKey].account += getPaymentAmount(book, "Account");
       }
     );
 
@@ -298,12 +304,13 @@ export const getMonthlySummary = async (req, res) => {
   };
 
   bookings.forEach((book) => {
-    const type = book.paymenType;
-    const total = (book.prePay || 0) + (book.postPay || 0);
-    if (paymentSummary[type]) {
-      paymentSummary[type].count += 1;
-      paymentSummary[type].amount += total;
-    }
+    (["Cash", "Card", "Account"] as const).forEach((type) => {
+      const amount = getPaymentAmount(book, type);
+      if (amount > 0) {
+        paymentSummary[type].count += 1;
+        paymentSummary[type].amount += amount;
+      }
+    });
   });
 
   bookings.forEach((b) => {

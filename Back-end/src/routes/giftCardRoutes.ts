@@ -8,7 +8,5 @@ router.get("/get", getAllGiftCard);
 router.post("/create", createNewGiftCard);
 router.put("/update/:id", updateGiftCard);
 router.delete("/delete/:id", deleteGiftCard);
-// router.get("/getbyid/:id", controller.getById);
-// router.get("/getbyday/:date", controller.getByDay);
 
 export default router;

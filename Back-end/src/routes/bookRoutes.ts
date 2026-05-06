@@ -4,14 +4,8 @@ const router = Router();
 import {
   getAllBooks,
   createBook,
-  getAllCanvas,
-  getByPhoto,
-  getByCardType,
-  getBookById,
   deleteBook,
-  getByAccountType,
   updateBook,
-  getByCashType,
   getAllBookForChart,
   updateIsCanvasCheck,
 } from "../controllers/studioController.js";
@@ -24,15 +18,9 @@ import authMiddleware from "../middleware/authMiddleware.js";
 
 router.get("/get", getAllBooks);
 router.get("/getall", getAllBookForChart);
-router.get("/getbycanvas", getAllCanvas);
-router.get("/getbyphoto", getByPhoto);
-router.get("/getbycardtype", getByCardType);
-router.get("/getbycashtype", getByCashType);
-router.get("/getbyaccounttype", getByAccountType);
 router.post("/create", authMiddleware, createBook);
 router.put("/update/:id", updateBook);
 router.delete("/delete/:id", deleteBook);
-router.get("/getbyid/:id", getBookById);
 router.get("/daily-summary", getDailySummary);
 router.get("/monthly-summary", getMonthlySummary);
 router.get("/monthly-payment-types", getPaymenTypeOfMonthly);

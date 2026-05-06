@@ -22,6 +22,14 @@ const canvasSchema = new Schema({
   price: { type: Number },
   realPrice: { type: Number },
 });
+const paymentBreakdownSchema = new Schema(
+  {
+    cash: { type: Number, default: 0 },
+    card: { type: Number, default: 0 },
+    account: { type: Number, default: 0 },
+  },
+  { _id: false }
+);
 
 const BookSchema = new Schema({
   year: { type: String },
@@ -39,6 +47,7 @@ const BookSchema = new Schema({
   frameAndPaper: [frameAndPaperSchema],
   canvas: [canvasSchema],
   paymenType: { type: String },
+  paymentBreakdown: { type: paymentBreakdownSchema, default: () => ({}) },
   description: { type: String },
   createdBy: {
     type: Schema.Types.ObjectId,

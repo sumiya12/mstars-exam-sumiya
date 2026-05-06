@@ -2,8 +2,6 @@
 const router = express.Router();
 import bookRoutes from "./bookRoutes.js";
 import warehouseRoutes from "./warehouseRoutes.js";
-import canvasRoutes from "./canvasRoutes.js";
-import loginRoutes from "./authRoutes.js";
 import giftCardRoutes from "./giftCardRoutes.js";
 import timeLogRoutes from "./timeLogRoutes.js";
 import calendlyRoutes from "./calendlyRoutes.js";
@@ -14,8 +12,6 @@ import partyOrderRoutes from "./partyOrderRoutes.js";
 
 router.use("/book", bookRoutes);
 router.use("/warehouse", warehouseRoutes);
-router.use("/canvas", canvasRoutes);
-router.use("/login", loginRoutes);
 router.use("/giftcard", giftCardRoutes);
 router.use("/time", timeLogRoutes);
 router.use("/picshot", calendlyRoutes);
