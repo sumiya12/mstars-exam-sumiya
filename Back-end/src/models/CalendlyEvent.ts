@@ -10,6 +10,8 @@ const calendlySchema = new Schema({
   time: { type: String },
   payment: { type: String },
   created_at: { type: String },
+  eventUri: { type: String },
+  normalizedPhone: { type: String },
 });
 
 const Calendly = model("Calendly", calendlySchema);

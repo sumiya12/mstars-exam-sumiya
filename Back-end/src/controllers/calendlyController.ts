@@ -43,7 +43,18 @@ export const checkPhoneDuplicate = async (req, res) => {
   }
 
   try {
-    const exists = await Calendly.exists({ phone, date }); // OR date: new Date(date)
+    const normalizedPhone = phone.replace(/\D/g, "").replace(/^976/, "");
+    const [year, month, day] = String(date).split("-");
+    const legacyDate =
+      year && month && day ? `${Number(month)}/${Number(day)}/${year}` : date;
+    const exists = await Calendly.exists({
+      $or: [
+        { normalizedPhone, date },
+        { normalizedPhone, date: legacyDate },
+        { phone, date },
+        { phone, date: legacyDate },
+      ],
+    });
     return res.json({ exists: !!exists, normalizedPhone: phone });
   } catch (error) {
     console.error("Phone check error:", error);
@@ -68,6 +79,32 @@ export const getPaidStatus = async (req, res) => {
 
 export const createCalendlyEvents = async (req, res) => {
   try {
+    const normalizedPhone = String(req.body.phone || "")
+      .replace(/\D/g, "")
+      .replace(/^976/, "");
+    const [year, month, day] = String(req.body.date || "").split("-");
+    const legacyDate =
+      year && month && day
+        ? `${Number(month)}/${Number(day)}/${year}`
+        : req.body.date;
+
+    const existingCalendlyEvent = await Calendly.findOne({
+      $or: [
+        ...(req.body.eventUri ? [{ eventUri: req.body.eventUri }] : []),
+        { normalizedPhone, date: req.body.date },
+        { normalizedPhone, date: legacyDate },
+      ],
+    });
+
+    if (existingCalendlyEvent) {
+      return res.status(409).json({
+        success: false,
+        message: "Энэ хэрэглэгч тухайн өдөр аль хэдийн баталгаажсан байна.",
+        data: existingCalendlyEvent,
+      });
+    }
+
+    req.body.normalizedPhone = normalizedPhone;
     const calendlyEvent = await createCalendlyEventsService(req);
     res.status(200).json({
       success: true,

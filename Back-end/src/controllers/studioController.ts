@@ -295,7 +295,7 @@ export const createBook = async (req, res) => {
 
 export const createWarehouseItem = async (req, res) => {
   try {
-    const { type, size, quantity } = req.body;
+    const { type, size, quantity, price } = req.body;
 
     // Validate required fields
     if (!type || type.trim() === "") {
@@ -323,36 +323,27 @@ export const createWarehouseItem = async (req, res) => {
         .json({ success: false, message: "Quantity must be greater than 0." });
     }
 
-    // Check for existing item
-    const existingItem = await WareHouse.findOne({ type, size });
-
-    if (existingItem) {
-      existingItem.quantity += parsedQuantity;
-      await existingItem.save();
-
-      return handleResponse(
-        res,
-        existingItem,
-        "Quantity updated successfully",
-        "Failed to update quantity"
-      );
-    }
-
-    // Restrict creation of "paper" or "frame" items
-    if (type === "paper" || type === "frame") {
+    if (!["paper", "frame"].includes(type)) {
       return res.status(400).json({
         success: false,
-        message: "Cannot create item of type 'paper' or 'frame'.",
+        message: "Type must be either paper or frame.",
       });
     }
 
-    const newWarehouseItem = await createWarehouse(req); // Assumes this handles validation and creation
+    const warehouseItem = await WareHouse.findOneAndUpdate(
+      { type, size },
+      {
+        $inc: { quantity: parsedQuantity },
+        ...(price !== undefined ? { $set: { price: Number(price || 0) } } : {}),
+      },
+      { new: true, upsert: true, runValidators: true }
+    );
+
     return handleResponse(
       res,
-      newWarehouseItem,
-      "Item created successfully",
-      "Failed to create item",
-      201
+      warehouseItem,
+      "Quantity updated successfully",
+      "Failed to update quantity"
     );
   } catch (error) {
     console.error("Error creating warehouse item:", error);

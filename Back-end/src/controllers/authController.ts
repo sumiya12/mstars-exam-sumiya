@@ -3,7 +3,12 @@ import type { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import type { AuthenticatedRequest } from "../middleware/authMiddleware.js";
 import User from "../models/User.js";
-import { deleteUser, getUsers, registerUser } from "../services/userService.js";
+import {
+  deleteUser,
+  getUsers,
+  registerUser,
+  updateUser,
+} from "../services/userService.js";
 
 type UserRole = "admin" | "employee";
 
@@ -20,10 +25,14 @@ type LoginBody = {
 };
 
 export const register = async (
-  req: Request<unknown, unknown, RegisterBody>,
+  req: AuthenticatedRequest,
   res: Response
 ) => {
   try {
+    if (req.user?.role !== "admin") {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
     if (req.body.role && !["admin", "employee"].includes(req.body.role)) {
       return res.status(400).json({ message: "Invalid role" });
     }
@@ -156,8 +165,34 @@ export const removeUser = async (req: AuthenticatedRequest, res: Response) => {
   }
 };
 
-export const listUsers = async (_req: Request, res: Response) => {
+export const updateUserById = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
+    if (req.user?.role !== "admin") {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    if (req.body.role && !["admin", "employee"].includes(req.body.role)) {
+      return res.status(400).json({ message: "Invalid role" });
+    }
+
+    const updated = await updateUser(req.params.id, req.body);
+    delete updated.password;
+
+    return res.json({ success: true, user: updated });
+  } catch (err: any) {
+    return res.status(err.statusCode || 500).json({ message: err.message });
+  }
+};
+
+export const listUsers = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    if (req.user?.role !== "admin") {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
     const users = await getUsers();
     return res.json(users);
   } catch (err: any) {

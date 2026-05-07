@@ -1,6 +1,23 @@
 ﻿import Book from "../models/Book.js";
 import WareHouse from "../models/WarehouseItem.js";
 
+const DEFAULT_PRICES = {
+  paper: {
+    A6: 2500,
+    A5: 5000,
+    A4: 10000,
+    A3: 15000,
+  },
+  frame: {
+    A5: 10000,
+    A4: 15000,
+    A3: 30000,
+  },
+};
+
+const getDefaultPrice = (type: "paper" | "frame", size: string) =>
+  DEFAULT_PRICES[type]?.[size] || 0;
+
 const getPaymentAmount = (book, type: "Cash" | "Card" | "Account") => {
   const splitKey = type.toLowerCase();
   const splitAmount = Number(book.paymentBreakdown?.[splitKey] || 0);
@@ -52,7 +69,7 @@ export const getDailySummary = async (req, res) => {
   // 📦 unitPrice татах туслах функц
   const getUnitPrice = async (type, size) => {
     const item: any = await WareHouse.findOne({ type, size });
-    return item?.price || 0;
+    return item?.price || getDefaultPrice(type, size);
   };
 
   // 👇 Price-based дүн бодох функц
@@ -239,7 +256,7 @@ export const getMonthlySummary = async (req, res) => {
   // Price fetcher
   const getUnitPrice = async (type, size) => {
     const item: any = await WareHouse.findOne({ type, size });
-    return item?.price || 0;
+    return item?.price || getDefaultPrice(type, size);
   };
 
   const calcTotalAmount = async (items, type) => {
@@ -339,9 +356,9 @@ export const getMonthlySummary = async (req, res) => {
       frameOnly: frameOnlyAmount,
       frameAndPaper: frameAndPaperAmount,
       canvas: canvasAmount,
-      total: total.toLocaleString(),
-      prePay: prePay.toLocaleString(),
-      postPay: postPay.toLocaleString(),
+      total,
+      prePay,
+      postPay,
     },
     paymentSummary,
   });
