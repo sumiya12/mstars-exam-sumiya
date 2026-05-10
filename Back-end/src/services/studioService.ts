@@ -2,14 +2,18 @@
 import WareHouse from "../models/WarehouseItem.js";
 import { Types } from "mongoose";
 import Calendly from "../models/CalendlyEvent.js";
+import type { AppRequest, PaymentBreakdown } from "../types/http.js";
 
-const normalizePaymentBreakdown = (paymentBreakdown?: any) => ({
+const normalizePaymentBreakdown = (paymentBreakdown?: PaymentBreakdown) => ({
   cash: Number(paymentBreakdown?.cash || 0),
   card: Number(paymentBreakdown?.card || 0),
   account: Number(paymentBreakdown?.account || 0),
 });
 
-const getPrimaryPaymentType = (paymentBreakdown?: any, fallback = "") => {
+const getPrimaryPaymentType = (
+  paymentBreakdown?: PaymentBreakdown,
+  fallback = ""
+) => {
   const normalized = normalizePaymentBreakdown(paymentBreakdown);
   const activeTypes = Object.entries(normalized).filter(
     ([, value]) => Number(value) > 0
@@ -30,7 +34,9 @@ const getPrimaryPaymentType = (paymentBreakdown?: any, fallback = "") => {
 };
 
 // Helper function for standard error handling
-const handleDatabaseOperation = async (operation: () => any) => {
+const handleDatabaseOperation = async <T>(
+  operation: () => PromiseLike<T> | T
+) => {
   try {
     return await operation();
   } catch (error) {
@@ -40,11 +46,11 @@ const handleDatabaseOperation = async (operation: () => any) => {
 };
 
 // Create operations
-export const created = async (req) =>
+export const created = async (req: AppRequest) =>
   handleDatabaseOperation(() => new Book(req.body).save());
-export const createCalendlyEventsService = async (req) =>
+export const createCalendlyEventsService = async (req: AppRequest) =>
   handleDatabaseOperation(() => new Calendly(req.body).save());
-export const createWarehouse = async (req) =>
+export const createWarehouse = async (req: AppRequest) =>
   handleDatabaseOperation(() => new WareHouse(req.body).save());
 
 // Read operations
@@ -56,12 +62,16 @@ export const getAllWarehouse = async (_req?: unknown) =>
   handleDatabaseOperation(() => WareHouse.find());
 
 // Update operations
-export const update = async (id, req) => {
+export const update = async (id: string, req: AppRequest) => {
   const {
     year,
     day,
     bookedTime,
     packageName,
+    giftCardId,
+    giftCardCode,
+    giftCardPackage,
+    giftCardContact,
     prePay,
     postPay,
     addPayment,
@@ -91,6 +101,10 @@ export const update = async (id, req) => {
       day,
       bookedTime,
       packageName,
+      giftCardId,
+      giftCardCode,
+      giftCardPackage,
+      giftCardContact,
       prePay,
       postPay,
       addPayment,
@@ -132,7 +146,7 @@ export const update = async (id, req) => {
   }
 };
 
-export const updateCanvasCheck = async (id, req) => {
+export const updateCanvasCheck = async (id: string, req: AppRequest) => {
   const { pickedUpCanvas } = req.body;
 
   try {
@@ -153,14 +167,14 @@ export const updateCanvasCheck = async (id, req) => {
 };
 
 // Delete operations
-export const deleted = async (id) => {
+export const deleted = async (id: string) => {
   if (Types.ObjectId.isValid(id)) {
     return await Book.findByIdAndDelete(id);
   }
   throw new Error("Invalid ID");
 };
 
-export const deleteCalendlyEventsService = async (id) => {  
+export const deleteCalendlyEventsService = async (id: string) => {  
   if (Types.ObjectId.isValid(id)) {
     return await Calendly.findByIdAndDelete(id);
   }

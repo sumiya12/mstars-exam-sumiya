@@ -6,7 +6,16 @@ import {
 } from "../services/studioService.js";
 import { handleResponse } from "../utils/responseHandler.js";
 import Calendly from "../models/CalendlyEvent.js";
-export const getCalendlyUser = async (req, res) => {
+import type { Response } from "express";
+import type { AppRequest } from "../types/http.js";
+
+type CalendlyEvent = {
+  uri?: string;
+  invitees?: unknown[];
+  [key: string]: any;
+};
+
+export const getCalendlyUser = async (_req: AppRequest, res: Response) => {
   try {
     const response = await axios.get("https://api.calendly.com/users/me", {
       headers: {
@@ -21,7 +30,7 @@ export const getCalendlyUser = async (req, res) => {
   }
 };
 
-export const checkPhoneDuplicate = async (req, res) => {
+export const checkPhoneDuplicate = async (req: AppRequest, res: Response) => {
   let { phone, date } = req.query;
   if (!phone || !date) {
     return res
@@ -62,7 +71,7 @@ export const checkPhoneDuplicate = async (req, res) => {
   }
 };
 
-export const getPaidStatus = async (req, res) => {
+export const getPaidStatus = async (req: AppRequest, res: Response) => {
   try {
     const getPaidStatus = await getAllPaidInvitees(req);
     handleResponse(
@@ -77,7 +86,7 @@ export const getPaidStatus = async (req, res) => {
   }
 };
 
-export const createCalendlyEvents = async (req, res) => {
+export const createCalendlyEvents = async (req: AppRequest, res: Response) => {
   try {
     const normalizedPhone = String(req.body.phone || "")
       .replace(/\D/g, "")
@@ -117,7 +126,10 @@ export const createCalendlyEvents = async (req, res) => {
   }
 };
 
-export const deleteCalendlyEvent = async (req, res) => {
+export const deleteCalendlyEvent = async (
+  req: AppRequest<{ id: string }>,
+  res: Response
+) => {
   const { id } = req.params;
   try {
     // Check if the event exists
@@ -134,7 +146,7 @@ export const deleteCalendlyEvent = async (req, res) => {
   }
 };
 
-export const getAllScheduledEvents = async (req, res) => {
+export const getAllScheduledEvents = async (_req: AppRequest, res: Response) => {
   try {
     const tokens = [process.env.CALENDLY_TOKEN, process.env.CALENDLY_TOKEN_1];
 
@@ -165,7 +177,7 @@ export const getAllScheduledEvents = async (req, res) => {
 
           // Step 3: Enrich each event with invitees
           const enrichedEvents = await Promise.all(
-            events.map(async (event) => {
+            events.map(async (event: CalendlyEvent) => {
               if (event.uri) {
                 const eventId = event.uri.split("/").pop();
                 try {
@@ -189,14 +201,14 @@ export const getAllScheduledEvents = async (req, res) => {
                   );
                   return {
                     ...event,
-                    invitees: [],
+                    invitees: [] as unknown[],
                     inviteeFetchError: err.message,
                   };
                 }
               }
               return {
                 ...event,
-                invitees: [],
+                invitees: [] as unknown[],
                 note: "Event has no valid URI or invitee data",
               };
             })

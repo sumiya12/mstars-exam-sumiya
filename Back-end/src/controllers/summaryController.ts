@@ -1,7 +1,31 @@
 ﻿import Book from "../models/Book.js";
 import WareHouse from "../models/WarehouseItem.js";
+import type { Response } from "express";
+import type {
+  AppRequest,
+  BookingAddon,
+  PaymentBreakdown,
+} from "../types/http.js";
 
-const DEFAULT_PRICES = {
+type StockType = "paper" | "frame";
+type PaymentType = "Cash" | "Card" | "Account";
+type SizeSummary = Record<string, number>;
+type BookSummary = {
+  paymentBreakdown?: PaymentBreakdown;
+  paymenType?: string;
+  prePay?: number;
+  postPay?: number;
+  year?: string;
+  day?: string;
+  createdAt?: Date | string;
+  pictures?: BookingAddon[];
+  paper?: BookingAddon[];
+  frame?: BookingAddon[];
+  frameAndPaper?: BookingAddon[];
+  canvas?: BookingAddon[];
+};
+
+const DEFAULT_PRICES: Record<StockType, Record<string, number>> = {
   paper: {
     A6: 2500,
     A5: 5000,
@@ -15,10 +39,10 @@ const DEFAULT_PRICES = {
   },
 };
 
-const getDefaultPrice = (type: "paper" | "frame", size: string) =>
+const getDefaultPrice = (type: StockType, size: string) =>
   DEFAULT_PRICES[type]?.[size] || 0;
 
-const getPaymentAmount = (book, type: "Cash" | "Card" | "Account") => {
+const getPaymentAmount = (book: BookSummary, type: PaymentType) => {
   const splitKey = type.toLowerCase();
   const splitAmount = Number(book.paymentBreakdown?.[splitKey] || 0);
 
@@ -27,25 +51,95 @@ const getPaymentAmount = (book, type: "Cash" | "Card" | "Account") => {
   return book.paymenType === type ? (book.prePay || 0) + (book.postPay || 0) : 0;
 };
 
-export const getDailySummary = async (req, res) => {
-  const { date } = req.query;
+const parseReportDate = (value?: string) => {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
 
-  if (!date) return res.status(400).json({ message: "Date is required" });
+  const [year, month, day] = value.split("-").map(Number);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
 
-  const shortDate = date.slice(5); // "10-21" гэх мэт
-  const currentYear = date.slice(0, 4); // "2025"
+  if (
+    parsed.getUTCFullYear() !== year ||
+    parsed.getUTCMonth() !== month - 1 ||
+    parsed.getUTCDate() !== day
+  ) {
+    return null;
+  }
 
-  const bookings = await Book.find({
-    year: currentYear,
-    day: shortDate,
-  });
+  return parsed;
+};
+
+const toDateKey = (date: Date) => {
+  const year = String(date.getUTCFullYear());
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+
+  return {
+    year,
+    day: `${month}-${day}`,
+    fullDate: `${year}-${month}-${day}`,
+  };
+};
+
+const addUtcDays = (date: Date, days: number) => {
+  const next = new Date(date);
+  next.setUTCDate(next.getUTCDate() + days);
+  return next;
+};
+
+const buildDailySummaryQuery = (start: Date, end: Date) => {
+  const dateFilters: Array<{ year: string; day: string }> = [];
+  let cursor = new Date(start);
+
+  while (cursor <= end) {
+    const { year, day } = toDateKey(cursor);
+    dateFilters.push({ year, day });
+    cursor = addUtcDays(cursor, 1);
+  }
+
+  return {
+    $or: [
+      ...dateFilters,
+      {
+        year: { $exists: false },
+        createdAt: {
+          $gte: start,
+          $lt: addUtcDays(end, 1),
+        },
+      },
+    ],
+  };
+};
+
+export const getDailySummary = async (req: AppRequest, res: Response) => {
+  const { date, startDate, endDate } = req.query;
+  const startInput = (startDate || date) as string | undefined;
+  const endInput = (endDate || startDate || date) as string | undefined;
+
+  if (!startInput || !endInput) {
+    return res.status(400).json({ message: "Date range is required" });
+  }
+
+  const parsedStart = parseReportDate(startInput);
+  const parsedEnd = parseReportDate(endInput);
+
+  if (!parsedStart || !parsedEnd) {
+    return res.status(400).json({ message: "Invalid date format" });
+  }
+
+  if (parsedStart > parsedEnd) {
+    return res.status(400).json({ message: "Start date must be before end date" });
+  }
+
+  const bookings = await Book.find(
+    buildDailySummaryQuery(parsedStart, parsedEnd)
+  ).lean<BookSummary[]>();
 
   // Бүх төрлийн массив цуглуулах
-  let giftPhotos = [];
-  let additionalPhotos = [];
-  let frameOnly = [];
-  let frameAndPaper = [];
-  let canvasList = [];
+  const giftPhotos: BookingAddon[] = [];
+  const additionalPhotos: BookingAddon[] = [];
+  const frameOnly: BookingAddon[] = [];
+  const frameAndPaper: BookingAddon[] = [];
+  const canvasList: BookingAddon[] = [];
 
   bookings.forEach(
     ({
@@ -67,13 +161,13 @@ export const getDailySummary = async (req, res) => {
   const canvasAmount = canvasList.reduce((sum, c) => sum + (c.price || 0), 0);
 
   // 📦 unitPrice татах туслах функц
-  const getUnitPrice = async (type, size) => {
+  const getUnitPrice = async (type: StockType, size: string) => {
     const item: any = await WareHouse.findOne({ type, size });
     return item?.price || getDefaultPrice(type, size);
   };
 
   // 👇 Price-based дүн бодох функц
-  const calcTotalAmount = async (items, type) => {
+  const calcTotalAmount = async (items: BookingAddon[], type: StockType) => {
     const prices = await Promise.all(
       items.map(async (item) => {
         const price = await getUnitPrice(type, item.size);
@@ -84,16 +178,16 @@ export const getDailySummary = async (req, res) => {
   };
 
   // Breakdown size
-  const summarizeBySize = (items) => {
-    const summary = {};
+  const summarizeBySize = (items: BookingAddon[]) => {
+    const summary: SizeSummary = {};
     items.forEach(({ size, count }) => {
       if (!size) return;
       summary[size] = (summary[size] || 0) + (count || 0);
     });
     return summary;
   };
-  const countBySize = (items) => {
-    const summary = {};
+  const countBySize = (items: BookingAddon[]) => {
+    const summary: SizeSummary = {};
     items.forEach(({ size }) => {
       if (!size) return;
       summary[size] = (summary[size] || 0) + 1;
@@ -143,7 +237,9 @@ export const getDailySummary = async (req, res) => {
   const total = prePay + postPay;
 
   res.json({
-    date,
+    date: startInput === endInput ? startInput : undefined,
+    startDate: toDateKey(parsedStart).fullDate,
+    endDate: toDateKey(parsedEnd).fullDate,
     totalBookings: bookings.length,
     totalPhotos,
     totalFrames,
@@ -168,9 +264,12 @@ export const getDailySummary = async (req, res) => {
     paymentTypes,
   });
 };
-export const getPaymenTypeOfMonthly = async (req, res) => {
+export const getPaymenTypeOfMonthly = async (
+  _req: AppRequest,
+  res: Response
+) => {
   try {
-    const bookings = await Book.find({});
+    const bookings = await Book.find({}).lean<BookSummary[]>();
 
     // Group bookings by month like "2025-07"
     const grouped: Record<string, { card: number; cash: number; account: number }> = {};
@@ -211,11 +310,11 @@ export const getPaymenTypeOfMonthly = async (req, res) => {
   }
 };
 
-export const getMonthlySummary = async (req, res) => {
+export const getMonthlySummary = async (req: AppRequest, res: Response) => {
   const { month } = req.query;
   if (!month) return res.status(400).json({ message: "Month is required" });
 
-  const [yearStr, monthStr] = month.split("-");
+  const [yearStr, monthStr] = String(month).split("-");
   const startDate = new Date(`${month}-01`);
   const endDate = new Date(startDate);
   endDate.setMonth(endDate.getMonth() + 1);
@@ -228,14 +327,14 @@ export const getMonthlySummary = async (req, res) => {
         createdAt: { $gte: startDate, $lt: endDate }, // Fallback to createdAt
       },
     ],
-  });
+  }).lean<BookSummary[]>();
 
   // Initialize arrays
-  let giftPhotos = [],
-    additionalPhotos = [],
-    frameOnly = [],
-    frameAndPaper = [],
-    canvasList = [];
+  const giftPhotos: BookingAddon[] = [];
+  const additionalPhotos: BookingAddon[] = [];
+  const frameOnly: BookingAddon[] = [];
+  const frameAndPaper: BookingAddon[] = [];
+  const canvasList: BookingAddon[] = [];
 
   bookings.forEach(
     ({
@@ -254,12 +353,12 @@ export const getMonthlySummary = async (req, res) => {
   );
 
   // Price fetcher
-  const getUnitPrice = async (type, size) => {
+  const getUnitPrice = async (type: StockType, size: string) => {
     const item: any = await WareHouse.findOne({ type, size });
     return item?.price || getDefaultPrice(type, size);
   };
 
-  const calcTotalAmount = async (items, type) => {
+  const calcTotalAmount = async (items: BookingAddon[], type: StockType) => {
     const prices = await Promise.all(
       items.map(async (item) => {
         const price = await getUnitPrice(type, item.size);
@@ -269,8 +368,8 @@ export const getMonthlySummary = async (req, res) => {
     return prices.reduce((sum, p) => sum + p, 0);
   };
 
-  const summarizeBySize = (items) => {
-    const summary = {};
+  const summarizeBySize = (items: BookingAddon[]) => {
+    const summary: SizeSummary = {};
     items.forEach(({ size, count }) => {
       if (!size) return;
       summary[size] = (summary[size] || 0) + (count || 0);
@@ -278,8 +377,8 @@ export const getMonthlySummary = async (req, res) => {
     return summary;
   };
 
-  const countBySize = (items) => {
-    const summary = {};
+  const countBySize = (items: BookingAddon[]) => {
+    const summary: SizeSummary = {};
     items.forEach(({ size }) => {
       if (!size) return;
       summary[size] = (summary[size] || 0) + 1;

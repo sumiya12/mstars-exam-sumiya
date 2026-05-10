@@ -35,7 +35,7 @@ userSchema.pre("save", async function (next) {
 });
 
 // Method to compare password
-userSchema.methods.comparePassword = async function (candidatePassword) {
+userSchema.methods.comparePassword = async function (candidatePassword: string) {
   return await compare(candidatePassword, this.password);
 };
 

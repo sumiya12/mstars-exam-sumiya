@@ -1,10 +1,22 @@
 ﻿import Package from "../models/Package.js";
 import { validatePackage } from "../utils/validator.js";
+import type { RequestBody } from "../types/http.js";
+
+type PackageOptionInput = {
+  value?: string;
+  label?: string;
+  price?: number;
+};
+
+type PackageInput = {
+  label?: string;
+  options?: PackageOptionInput[];
+};
 
 export const getAll = async () => {
   return await Package.find().sort({ createdAt: -1 });
 };
-export const create = async (data) => {
+export const create = async (data: PackageInput) => {
   if (!data?.label?.trim()) {
     throw new Error("Label missing");
   }
@@ -17,7 +29,7 @@ export const create = async (data) => {
   });
 };
 
-export const remove = async (id, user?: unknown) => {
+export const remove = async (id: string, user?: unknown) => {
   // if (user.role !== "admin") {
   //   throw new Error("Forbidden");
   // }
@@ -31,7 +43,7 @@ export const remove = async (id, user?: unknown) => {
   return await Package.findByIdAndDelete(id);
 };
 
-export const edit = async (id, data, user?: unknown) => {
+export const edit = async (id: string, data: RequestBody, user?: unknown) => {
   const updated = await Package.findByIdAndUpdate(
     id,
     { $set: data },

@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 
 export type JwtUser = {
+  _id?: string;
   id: string;
   username?: string;
   userrealname?: string;

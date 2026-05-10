@@ -1,14 +1,17 @@
 ﻿import Expense from "../models/Expense.js";
 
+import type { Response } from "express";
+import type { AppRequest } from "../types/http.js";
+
 const VALID_BUSINESS = new Set(["PICSHOT", "PICO_KIDS", "GROCERIES"]);
 const VALID_PAYMENTS = new Set(["CASH", "ACCOUNT", "QPAY"]);
 
-function isValidDateString(d) {
+function isValidDateString(d: unknown) {
   return typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d);
 }
 
 // GET /expense (filters)
-export const listExpenses = async (req, res) => {
+export const listExpenses = async (req: AppRequest, res: Response) => {
   try {
     const { businessType, date, dateFrom, dateTo, category } = req.query;
     const filter: Record<string, any> = {};
@@ -34,7 +37,7 @@ export const listExpenses = async (req, res) => {
 };
 
 // POST /expense
-export const createExpense = async (req, res) => {
+export const createExpense = async (req: AppRequest, res: Response) => {
   try {
     const {
       businessType,
@@ -87,7 +90,10 @@ export const createExpense = async (req, res) => {
 };
 
 // ✅ PUT /expense/:id  (EDIT)
-export const updateExpense = async (req, res) => {
+export const updateExpense = async (
+  req: AppRequest<{ id: string }>,
+  res: Response
+) => {
   try {
     const { id } = req.params;
     const patch = req.body || {};
@@ -126,7 +132,10 @@ export const updateExpense = async (req, res) => {
 };
 
 // ✅ DELETE /expense/:id  (DELETE)
-export const deleteExpense = async (req, res) => {
+export const deleteExpense = async (
+  req: AppRequest<{ id: string }>,
+  res: Response
+) => {
   try {
     const { id } = req.params;
     const deleted = await Expense.findByIdAndDelete(id);

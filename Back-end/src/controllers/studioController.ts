@@ -11,18 +11,27 @@ import { handleResponse } from "../utils/responseHandler.js";
 import WareHouse from "../models/WarehouseItem.js";
 import Book from "../models/Book.js";
 import User from "../models/User.js";
+import type { Response } from "express";
 import {
   buildCreatedByMatchExpression,
   createdByPopulateOptions,
 } from "../utils/createdBy.js";
+import type {
+  AppRequest,
+  BookingAddon,
+  PaymentBreakdown,
+} from "../types/http.js";
 
-const normalizePaymentBreakdown = (paymentBreakdown?: any) => ({
+const normalizePaymentBreakdown = (paymentBreakdown?: PaymentBreakdown) => ({
   cash: Number(paymentBreakdown?.cash || 0),
   card: Number(paymentBreakdown?.card || 0),
   account: Number(paymentBreakdown?.account || 0),
 });
 
-const getPrimaryPaymentType = (paymentBreakdown?: any, fallback = "") => {
+const getPrimaryPaymentType = (
+  paymentBreakdown?: PaymentBreakdown,
+  fallback = ""
+) => {
   const normalized = normalizePaymentBreakdown(paymentBreakdown);
   const activeTypes = Object.entries(normalized).filter(
     ([, value]) => Number(value) > 0
@@ -42,7 +51,7 @@ const getPrimaryPaymentType = (paymentBreakdown?: any, fallback = "") => {
   return fallback;
 };
 
-export const getAllBookForChart = async (req, res) => {
+export const getAllBookForChart = async (_req: AppRequest, res: Response) => {
   try {
     const books = await Book.find()
       .populate(createdByPopulateOptions)
@@ -58,9 +67,9 @@ export const getAllBookForChart = async (req, res) => {
   }
 };
 
-export const getAllBooks = async (req, res) => {
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 50;
+export const getAllBooks = async (req: AppRequest, res: Response) => {
+  const page = parseInt(req.query.page || "1", 10) || 1;
+  const limit = parseInt(req.query.limit || "50", 10) || 50;
   const offset = (page - 1) * limit;
 
   try {
@@ -135,7 +144,7 @@ export const getAllBooks = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-export const getAllWarehouses = async (req, res) => {
+export const getAllWarehouses = async (req: AppRequest, res: Response) => {
   try {
     const warehouseItems = await getAllWarehouseService(req);
     handleResponse(
@@ -150,7 +159,7 @@ export const getAllWarehouses = async (req, res) => {
   }
 };
 
-const deductQuantity = async (type, size, count) => {
+const deductQuantity = async (type: string, size: string, count: number) => {
   try {
     // Find the item in the warehouse
     const foundItem = await WareHouse.findOne({ type, size });
@@ -175,7 +184,7 @@ const deductQuantity = async (type, size, count) => {
   }
 };
 
-export const createBook = async (req, res) => {
+export const createBook = async (req: AppRequest, res: Response) => {
   try {
     const userId = req.user?._id || req.user?.id;
     if (!userId) {
@@ -199,6 +208,10 @@ export const createBook = async (req, res) => {
       day,
       bookedTime,
       packageName,
+      giftCardId,
+      giftCardCode,
+      giftCardPackage,
+      giftCardContact,
       prePay,
       postPay,
       addPayment,
@@ -234,7 +247,10 @@ export const createBook = async (req, res) => {
       });
     }
 
-    const processDeductions = async (items, type) => {
+    const processDeductions = async (
+      items: BookingAddon[] = [],
+      type: string
+    ) => {
       for (const item of items || []) {
         if (item?.size && Number(item?.count) > 0) {
           await deductQuantity(type, item.size, Number(item.count));
@@ -258,6 +274,10 @@ export const createBook = async (req, res) => {
       day,
       bookedTime,
       packageName,
+      giftCardId,
+      giftCardCode,
+      giftCardPackage,
+      giftCardContact,
       prePay: Number(prePay || 0),
       postPay,
       addPayment,
@@ -293,7 +313,7 @@ export const createBook = async (req, res) => {
   }
 };
 
-export const createWarehouseItem = async (req, res) => {
+export const createWarehouseItem = async (req: AppRequest, res: Response) => {
   try {
     const { type, size, quantity, price } = req.body;
 
@@ -353,7 +373,10 @@ export const createWarehouseItem = async (req, res) => {
   }
 };
 
-export const updateBook = async (req, res) => {
+export const updateBook = async (
+  req: AppRequest<{ id: string }>,
+  res: Response
+) => {
   const { id } = req.params;
   try {
     const updatedBook = await update(id, req);
@@ -368,7 +391,10 @@ export const updateBook = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-export const updateIsCanvasCheck = async (req, res) => {
+export const updateIsCanvasCheck = async (
+  req: AppRequest<{ id: string }>,
+  res: Response
+) => {
   const { id } = req.params;
   try {
     const updatedCanvas = await updateCanvasCheck(id, req);
@@ -384,7 +410,10 @@ export const updateIsCanvasCheck = async (req, res) => {
   }
 };
 
-export const deleteBook = async (req, res) => {
+export const deleteBook = async (
+  req: AppRequest<{ id: string }>,
+  res: Response
+) => {
   try {
     const { id } = req.params;
     const book = await deleted(id);

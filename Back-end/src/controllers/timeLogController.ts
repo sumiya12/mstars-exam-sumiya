@@ -1,7 +1,9 @@
 ﻿import TimeLog from "../models/TimeLog.js";
 import dayjs from "dayjs";
+import type { Response } from "express";
+import type { AppRequest } from "../types/http.js";
 
-export const getTimeLogsByDate = async (req, res) => {
+export const getTimeLogsByDate = async (req: AppRequest, res: Response) => {
   const { date } = req.query;
 
   if (!date) {
@@ -17,7 +19,7 @@ export const getTimeLogsByDate = async (req, res) => {
   }
 };
 
-export const getallTimeLogs = async (req, res) => {
+export const getallTimeLogs = async (_req: AppRequest, res: Response) => {
   try {
     const logs = await TimeLog.find().sort({ createdAt: -1 }); // latest first
     res.json(logs);
@@ -27,7 +29,7 @@ export const getallTimeLogs = async (req, res) => {
   }
 }
 
-export const createTimeLog = async (req, res) => {
+export const createTimeLog = async (req: AppRequest, res: Response) => {
   const { employee, date, clockIn, clockOut, description } = req.body;
 
   const log = new TimeLog({
@@ -41,7 +43,10 @@ export const createTimeLog = async (req, res) => {
   res.status(201).json(log);
 };
 
-export const deleteTimeLog = async (req, res) => {
+export const deleteTimeLog = async (
+  req: AppRequest<{ id: string }>,
+  res: Response
+) => {
   try {
     const { id } = req.params;
     await TimeLog.findByIdAndDelete(id);

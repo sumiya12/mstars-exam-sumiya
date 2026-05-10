@@ -2,10 +2,12 @@ import {
     created, getAllGift, update,deleted
 } from "../services/giftService.js";
 import { handleResponse } from '../utils/responseHandler.js';
+import type { Response } from "express";
+import type { AppRequest } from "../types/http.js";
 
 
 
-export const getAllGiftCard = async (req, res) => {
+export const getAllGiftCard = async (req: AppRequest, res: Response) => {
     try {
         const giftCard = await getAllGift(req);
         handleResponse(res, giftCard, "Successfully fetched all books", "Failed to fetch books");
@@ -15,7 +17,7 @@ export const getAllGiftCard = async (req, res) => {
     }
 };
 
-export const createNewGiftCard = async (req, res) => {
+export const createNewGiftCard = async (req: AppRequest, res: Response) => {
     try {
         const giftCard = await created(req);
         res.status(200).json({
@@ -29,7 +31,10 @@ export const createNewGiftCard = async (req, res) => {
     }
 };
 
-export const updateGiftCard = async (req, res) => {
+export const updateGiftCard = async (
+    req: AppRequest<{ id: string }>,
+    res: Response
+) => {
     const { id } = req.params;
 
     if (!req.body || Object.keys(req.body).length === 0) {
@@ -46,7 +51,10 @@ export const updateGiftCard = async (req, res) => {
 };
 
 
-export const deleteGiftCard = async (req, res) => {
+export const deleteGiftCard = async (
+    req: AppRequest<{ id: string }>,
+    res: Response
+) => {
     try {
       const { id } = req.params;
       const giftCard = await deleted(id);

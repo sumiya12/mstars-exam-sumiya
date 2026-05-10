@@ -1,6 +1,9 @@
 ﻿import PartyOrder from "../models/PartyOrder.js";
 
-export const createPartyOrder = async (req, res) => {
+import type { Response } from "express";
+import type { AppRequest } from "../types/http.js";
+
+export const createPartyOrder = async (req: AppRequest, res: Response) => {
   try {
     const order = await PartyOrder.create(req.body);
     res.json({ success: true, data: order });
@@ -9,7 +12,7 @@ export const createPartyOrder = async (req, res) => {
   }
 };
 
-export const getPartyOrders = async (req, res) => {
+export const getPartyOrders = async (_req: AppRequest, res: Response) => {
   try {
     const orders = await PartyOrder.find().sort({ eventDate: 1, eventTime: 1 });
     res.json({ success: true, data: orders });
@@ -18,7 +21,10 @@ export const getPartyOrders = async (req, res) => {
   }
 };
 
-export const updatePartyOrder = async (req, res) => {
+export const updatePartyOrder = async (
+  req: AppRequest<{ id: string }>,
+  res: Response
+) => {
   try {
     const allowedFields = [
       "orderDate",
@@ -67,7 +73,10 @@ export const updatePartyOrder = async (req, res) => {
   }
 };
 
-export const deletePartyOrder = async (req, res) => {
+export const deletePartyOrder = async (
+  req: AppRequest<{ id: string }>,
+  res: Response
+) => {
   try {
     await PartyOrder.findByIdAndDelete(req.params.id);
     res.json({ success: true, message: "Deleted" });
