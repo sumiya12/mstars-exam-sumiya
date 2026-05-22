@@ -1,7 +1,6 @@
 ﻿import Book from "../models/Book.js";
 import WareHouse from "../models/WarehouseItem.js";
 import { Types } from "mongoose";
-import Calendly from "../models/CalendlyEvent.js";
 import type { AppRequest, PaymentBreakdown } from "../types/http.js";
 
 const normalizePaymentBreakdown = (paymentBreakdown?: PaymentBreakdown) => ({
@@ -48,16 +47,12 @@ const handleDatabaseOperation = async <T>(
 // Create operations
 export const created = async (req: AppRequest) =>
   handleDatabaseOperation(() => new Book(req.body).save());
-export const createCalendlyEventsService = async (req: AppRequest) =>
-  handleDatabaseOperation(() => new Calendly(req.body).save());
 export const createWarehouse = async (req: AppRequest) =>
   handleDatabaseOperation(() => new WareHouse(req.body).save());
 
 // Read operations
 export const getAllBooks = async (_req?: unknown) =>
   handleDatabaseOperation(() => Book.find());
-export const getAllPaidInvitees = async (_req?: unknown) =>
-  handleDatabaseOperation(() => Calendly.find());
 export const getAllWarehouse = async (_req?: unknown) =>
   handleDatabaseOperation(() => WareHouse.find());
 
@@ -174,10 +169,4 @@ export const deleted = async (id: string) => {
   throw new Error("Invalid ID");
 };
 
-export const deleteCalendlyEventsService = async (id: string) => {  
-  if (Types.ObjectId.isValid(id)) {
-    return await Calendly.findByIdAndDelete(id);
-  }
-  throw new Error("Invalid ID");
-};
 

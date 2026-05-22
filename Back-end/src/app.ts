@@ -1,6 +1,5 @@
 ﻿import cors from "cors";
 import express from "express";
-import calendlyRoutes from "./routes/calendlyRoutes.js";
 import routes from "./routes/index.js";
 
 export const createApp = () => {
@@ -9,7 +8,6 @@ export const createApp = () => {
   app.use(cors());
   app.use(express.json());
 
-  app.use("/calendly", calendlyRoutes);
   app.use("/", routes);
 
   return app;
