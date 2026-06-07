@@ -57,19 +57,7 @@ export const getCanvasOrders = async (req: AppRequest, res: Response) => {
     const pageSize = Number.isFinite(requestedPageSize)
       ? Math.min(100, Math.max(10, requestedPageSize))
       : 50;
-    const includeLegacy = req.query.includeLegacy === "true";
-    const customerSnapshotQuery = {
-      $or: [
-        { "canvasCustomer.name": { $exists: true, $ne: "" } },
-        { "canvasCustomer.phone": { $exists: true, $ne: "" } },
-        { "canvasCustomer.email": { $exists: true, $ne: "" } },
-      ],
-    };
-    const baseQuery = includeLegacy
-      ? { "canvas.0": { $exists: true } }
-      : {
-          $and: [{ "canvas.0": { $exists: true } }, customerSnapshotQuery],
-        };
+    const baseQuery = { "canvas.0": { $exists: true } };
     const normalizedSearch = normalizeText(search);
     const shouldSearchAll = Boolean(normalizedSearch);
 
