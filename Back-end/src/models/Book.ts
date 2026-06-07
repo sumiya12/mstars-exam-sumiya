@@ -22,6 +22,14 @@ const canvasSchema = new Schema({
   price: { type: Number },
   realPrice: { type: Number },
 });
+const canvasCustomerSchema = new Schema(
+  {
+    name: { type: String, trim: true },
+    phone: { type: String, trim: true },
+    email: { type: String, trim: true },
+  },
+  { _id: false }
+);
 const paymentBreakdownSchema = new Schema(
   {
     cash: { type: Number, default: 0 },
@@ -50,6 +58,7 @@ const BookSchema = new Schema({
   frame: [frameSchema],
   frameAndPaper: [frameAndPaperSchema],
   canvas: [canvasSchema],
+  canvasCustomer: { type: canvasCustomerSchema, default: undefined },
   paymenType: { type: String },
   paymentBreakdown: { type: paymentBreakdownSchema, default: () => ({}) },
   description: { type: String },

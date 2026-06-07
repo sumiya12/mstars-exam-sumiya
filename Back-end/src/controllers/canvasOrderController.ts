@@ -7,7 +7,6 @@ import sharp from "sharp";
 import type { AppRequest } from "../types/http.js";
 import Book from "../models/Book.js";
 import CanvasUpload from "../models/CanvasUpload.js";
-import { getBookingSiteBookingModel } from "../models/BookingSiteBooking.js";
 import { createdByPopulateOptions } from "../utils/createdBy.js";
 import {
   createCanvasObjectKey,
@@ -22,28 +21,25 @@ const uploadRoot = path.resolve(
   process.env.CANVAS_UPLOAD_DIR || path.join(process.cwd(), "uploads", "canvas")
 );
 
-const toMinutes = (value = "") => {
-  const match = value.match(/^(\d{1,2}):(\d{2})/);
-  return match ? Number(match[1]) * 60 + Number(match[2]) : Number.NaN;
-};
-
 const normalizeText = (value = "") =>
   value
     .toLocaleLowerCase()
     .replace(/[^\p{L}\p{N}]+/gu, " ")
     .trim();
 
-const getPackageScore = (left = "", right = "") => {
-  const leftTokens = new Set(normalizeText(left).split(" ").filter(Boolean));
-  const rightTokens = new Set(normalizeText(right).split(" ").filter(Boolean));
-  if (!leftTokens.size || !rightTokens.size) return 0;
+const getCanvasCustomerSnapshot = (book: any) => {
+  const customer = book.canvasCustomer;
+  if (!customer) return null;
 
-  let matches = 0;
-  leftTokens.forEach((token) => {
-    if (rightTokens.has(token)) matches += 1;
-  });
+  const normalized = {
+    name: String(customer.name || "").trim(),
+    phone: String(customer.phone || "").trim(),
+    email: String(customer.email || "").trim(),
+  };
 
-  return matches / Math.max(leftTokens.size, rightTokens.size);
+  return normalized.name || normalized.phone || normalized.email
+    ? normalized
+    : null;
 };
 
 export const getCanvasOrders = async (req: AppRequest, res: Response) => {
@@ -92,46 +88,14 @@ export const getCanvasOrders = async (req: AppRequest, res: Response) => {
       uploadsByBook.set(key, current);
     });
 
-    const dates = books
-      .map((book) => `${book.year}-${book.day}`)
-      .filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date));
-    const BookingSiteBooking = getBookingSiteBookingModel();
-    const bookingQuery =
-      dates.length > 0
-        ? {
-            status: { $ne: "cancelled" },
-            date: {
-              $gte: dates.reduce((min, date) => (date < min ? date : min)),
-              $lte: dates.reduce((max, date) => (date > max ? date : max)),
-            },
-          }
-        : { _id: { $exists: false } };
-    const bookings = await BookingSiteBooking.find(bookingQuery).lean();
-
     const orders = books.map((book) => {
-      const bookingDate = `${book.year}-${book.day}`;
-      const bookMinutes = toMinutes(book.bookedTime);
-      const match = bookings
-        .filter((booking) => booking.date === bookingDate)
-        .map((booking) => ({
-          booking,
-          timeDiff: Math.abs(toMinutes(booking.time) - bookMinutes),
-          packageScore: getPackageScore(booking.eventTitle, book.packageName),
-        }))
-        .filter(({ timeDiff }) => Number.isFinite(timeDiff) && timeDiff <= 30)
-        .sort(
-          (a, b) =>
-            b.packageScore - a.packageScore || a.timeDiff - b.timeDiff
-        )[0]?.booking;
+      const snapshot = getCanvasCustomerSnapshot(book);
 
       return {
         ...book,
-        customer: match
+        customer: snapshot
           ? {
-              name: match.name || "",
-              phone: match.phone || "",
-              email: match.email || "",
-              bookingId: match.id,
+              ...snapshot,
             }
           : null,
         uploads: (uploadsByBook.get(String(book._id)) || []).map((upload) => ({

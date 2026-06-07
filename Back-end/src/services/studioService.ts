@@ -77,6 +77,7 @@ export const update = async (id: string, req: AppRequest) => {
     frame,
     frameAndPaper,
     canvas,
+    canvasCustomer,
     paymenType,
     paymentBreakdown,
     description,
@@ -131,6 +132,19 @@ export const update = async (id: string, req: AppRequest) => {
     }
     if (Array.isArray(canvas)) {
       updateData.canvas = canvas;
+    }
+    if (canvasCustomer !== undefined) {
+      const normalizedCanvasCustomer = {
+        name: String(canvasCustomer?.name || "").trim(),
+        phone: String(canvasCustomer?.phone || "").trim(),
+        email: String(canvasCustomer?.email || "").trim(),
+      };
+      updateData.canvasCustomer =
+        normalizedCanvasCustomer.name ||
+        normalizedCanvasCustomer.phone ||
+        normalizedCanvasCustomer.email
+          ? normalizedCanvasCustomer
+          : undefined;
     }
 
     await Book.findByIdAndUpdate(id, { $set: updateData });

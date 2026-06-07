@@ -222,6 +222,7 @@ export const createBook = async (req: AppRequest, res: Response) => {
       frameAndPaper = [],
       pictures = [],
       canvas = [],
+      canvasCustomer,
       paymenType,
       paymentBreakdown,
       description,
@@ -232,6 +233,19 @@ export const createBook = async (req: AppRequest, res: Response) => {
       normalizedPaymentBreakdown,
       paymenType
     );
+    const normalizedCanvasCustomer = {
+      name: String(canvasCustomer?.name || "").trim(),
+      phone: String(canvasCustomer?.phone || "").trim(),
+      email: String(canvasCustomer?.email || "").trim(),
+    };
+    const shouldStoreCanvasCustomer =
+      Array.isArray(canvas) &&
+      canvas.length > 0 &&
+      Boolean(
+        normalizedCanvasCustomer.name ||
+          normalizedCanvasCustomer.phone ||
+          normalizedCanvasCustomer.email
+      );
 
     const existingBooking = await Book.findOne({
       year,
@@ -288,6 +302,9 @@ export const createBook = async (req: AppRequest, res: Response) => {
       frameAndPaper,
       pictures,
       canvas,
+      ...(shouldStoreCanvasCustomer
+        ? { canvasCustomer: normalizedCanvasCustomer }
+        : {}),
       paymenType: resolvedPaymentType,
       paymentBreakdown: normalizedPaymentBreakdown,
       description,
