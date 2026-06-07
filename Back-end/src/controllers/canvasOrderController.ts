@@ -1,11 +1,20 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import type { Readable } from "node:stream";
+import { pipeline } from "node:stream/promises";
 import type { Response } from "express";
 import type { AppRequest } from "../types/http.js";
 import Book from "../models/Book.js";
 import CanvasUpload from "../models/CanvasUpload.js";
 import { getBookingSiteBookingModel } from "../models/BookingSiteBooking.js";
 import { createdByPopulateOptions } from "../utils/createdBy.js";
+import {
+  createCanvasObjectKey,
+  deleteCanvasObject,
+  getCanvasObject,
+  uploadCanvasObject,
+  usesCanvasS3,
+} from "../services/canvasStorageService.js";
 
 const uploadRoot = path.resolve(
   process.env.CANVAS_UPLOAD_DIR || path.join(process.cwd(), "uploads", "canvas")
@@ -142,6 +151,7 @@ export const getCanvasOrders = async (req: AppRequest, res: Response) => {
 
 export const uploadCanvasFiles = async (req: AppRequest, res: Response) => {
   const files = (req.files || []) as Express.Multer.File[];
+  const uploadedObjectKeys: string[] = [];
 
   try {
     const book = await Book.findOne({
@@ -164,24 +174,58 @@ export const uploadCanvasFiles = async (req: AppRequest, res: Response) => {
       return res.status(401).json({ message: "Нэвтрэх шаардлагатай" });
     }
 
-    const saved = await CanvasUpload.insertMany(
-      files.map((file) => ({
+    const records = [];
+    for (const file of files) {
+      const objectKey = usesCanvasS3
+        ? createCanvasObjectKey(String(book._id), file.filename)
+        : undefined;
+
+      if (objectKey) {
+        await uploadCanvasObject(
+          file.path,
+          objectKey,
+          file.mimetype,
+          file.originalname
+        );
+        uploadedObjectKeys.push(objectKey);
+      }
+
+      records.push({
         bookId: book._id,
         originalName: file.originalname,
         storedName: file.filename,
+        storageProvider: usesCanvasS3 ? "s3" : "local",
+        objectKey,
         mimeType: file.mimetype,
         size: file.size,
         uploadedBy,
-      }))
-    );
+      });
+    }
 
+    const saved = await CanvasUpload.insertMany(records);
     res.status(201).json({ success: true, data: saved });
   } catch (error) {
     await Promise.all(
-      files.map((file) => fs.unlink(file.path).catch((): void => undefined))
+      uploadedObjectKeys.map((objectKey) =>
+        deleteCanvasObject(objectKey).catch((): void => undefined)
+      )
     );
+    if (!usesCanvasS3) {
+      await Promise.all(
+        files.map((file) => fs.unlink(file.path).catch((): void => undefined))
+      );
+    }
     console.error("Canvas upload error:", error);
-    res.status(500).json({ success: false, message: "Зураг upload хийж чадсангүй" });
+    res.status(500).json({
+      success: false,
+      message: "Зураг upload хийж чадсангүй",
+    });
+  } finally {
+    if (usesCanvasS3) {
+      await Promise.all(
+        files.map((file) => fs.unlink(file.path).catch((): void => undefined))
+      );
+    }
   }
 };
 
@@ -189,13 +233,35 @@ export const downloadCanvasFile = async (req: AppRequest, res: Response) => {
   const upload = await CanvasUpload.findById(req.params.fileId).lean();
   if (!upload) return res.status(404).json({ message: "Файл олдсонгүй" });
 
-  const filePath = path.join(uploadRoot, upload.storedName);
   res.set({
     "Cache-Control": "private, no-store, no-cache, must-revalidate",
     Pragma: "no-cache",
     Expires: "0",
     "Content-Type": upload.mimeType || "application/octet-stream",
   });
+  res.attachment(upload.originalName);
+
+  if (upload.storageProvider === "s3" && upload.objectKey) {
+    try {
+      const object = await getCanvasObject(upload.objectKey);
+      if (!object.Body) {
+        return res.status(404).json({ message: "S3 файл олдсонгүй" });
+      }
+      if (object.ContentLength !== undefined) {
+        res.setHeader("Content-Length", String(object.ContentLength));
+      }
+      await pipeline(object.Body as Readable, res);
+      return;
+    } catch (error) {
+      console.error("Canvas S3 download error:", error);
+      if (!res.headersSent) {
+        return res.status(404).json({ message: "S3 файл татаж чадсангүй" });
+      }
+      return;
+    }
+  }
+
+  const filePath = path.join(uploadRoot, upload.storedName);
   res.download(filePath, upload.originalName, (error) => {
     if (error && !res.headersSent) {
       res.status(404).json({ message: "Файл диск дээр олдсонгүй" });
@@ -205,12 +271,18 @@ export const downloadCanvasFile = async (req: AppRequest, res: Response) => {
 
 export const deleteCanvasFile = async (req: AppRequest, res: Response) => {
   try {
-    const upload = await CanvasUpload.findByIdAndDelete(req.params.fileId).lean();
+    const upload = await CanvasUpload.findById(req.params.fileId).lean();
     if (!upload) return res.status(404).json({ message: "Файл олдсонгүй" });
 
-    await fs
-      .unlink(path.join(uploadRoot, upload.storedName))
-      .catch((): void => undefined);
+    if (upload.storageProvider === "s3" && upload.objectKey) {
+      await deleteCanvasObject(upload.objectKey);
+    } else {
+      await fs
+        .unlink(path.join(uploadRoot, upload.storedName))
+        .catch((): void => undefined);
+    }
+
+    await CanvasUpload.deleteOne({ _id: upload._id });
     res.json({ success: true });
   } catch (error) {
     console.error("Canvas file delete error:", error);

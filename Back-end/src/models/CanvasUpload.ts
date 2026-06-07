@@ -10,6 +10,13 @@ const CanvasUploadSchema = new Schema(
     },
     originalName: { type: String, required: true },
     storedName: { type: String, required: true, unique: true },
+    storageProvider: {
+      type: String,
+      enum: ["local", "s3"],
+      default: "local",
+      index: true,
+    },
+    objectKey: { type: String },
     mimeType: { type: String, required: true },
     size: { type: Number, required: true },
     uploadedBy: {
