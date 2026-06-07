@@ -190,6 +190,12 @@ export const downloadCanvasFile = async (req: AppRequest, res: Response) => {
   if (!upload) return res.status(404).json({ message: "Файл олдсонгүй" });
 
   const filePath = path.join(uploadRoot, upload.storedName);
+  res.set({
+    "Cache-Control": "private, no-store, no-cache, must-revalidate",
+    Pragma: "no-cache",
+    Expires: "0",
+    "Content-Type": upload.mimeType || "application/octet-stream",
+  });
   res.download(filePath, upload.originalName, (error) => {
     if (error && !res.headersSent) {
       res.status(404).json({ message: "Файл диск дээр олдсонгүй" });
