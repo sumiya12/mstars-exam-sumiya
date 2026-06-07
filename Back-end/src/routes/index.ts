@@ -9,6 +9,7 @@ import authRoutes from "./authRoutes.js";
 import packageRoutes from "./packageRoutes.js";
 import partyOrderRoutes from "./partyOrderRoutes.js";
 import bookingSiteRoutes from "./bookingSiteRoutes.js";
+import canvasOrderRoutes from "./canvasOrderRoutes.js";
 
 router.use("/book", bookRoutes);
 router.use("/warehouse", warehouseRoutes);
@@ -19,5 +20,6 @@ router.use("/auth", authRoutes);
 router.use("/package", packageRoutes);
 router.use("/party-order", partyOrderRoutes);
 router.use("/booking-site", bookingSiteRoutes);
+router.use("/canvas-orders", canvasOrderRoutes);
 
 export default router;
