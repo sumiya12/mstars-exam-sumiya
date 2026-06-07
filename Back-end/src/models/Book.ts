@@ -53,6 +53,7 @@ const BookSchema = new Schema({
   paymenType: { type: String },
   paymentBreakdown: { type: paymentBreakdownSchema, default: () => ({}) },
   description: { type: String },
+  canvasRepairNote: { type: String, trim: true, maxlength: 2000 },
   createdBy: {
     type: Schema.Types.ObjectId,
     ref: "User",

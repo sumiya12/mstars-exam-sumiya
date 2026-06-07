@@ -149,6 +149,53 @@ export const getCanvasOrders = async (req: AppRequest, res: Response) => {
   }
 };
 
+export const updateCanvasRepairNote = async (
+  req: AppRequest,
+  res: Response
+) => {
+  try {
+    const repairNote =
+      typeof req.body?.repairNote === "string" ? req.body.repairNote.trim() : "";
+
+    if (repairNote.length > 2000) {
+      return res.status(400).json({
+        success: false,
+        message: "Засварын тайлбар 2000 тэмдэгтээс ихгүй байна",
+      });
+    }
+
+    const book = await Book.findOneAndUpdate(
+      {
+        _id: req.params.bookId,
+        "canvas.0": { $exists: true },
+      },
+      { $set: { canvasRepairNote: repairNote } },
+      { new: true, runValidators: true }
+    ).lean();
+
+    if (!book) {
+      return res.status(404).json({
+        success: false,
+        message: "Canvas захиалга олдсонгүй",
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        _id: book._id,
+        canvasRepairNote: book.canvasRepairNote || "",
+      },
+    });
+  } catch (error) {
+    console.error("Canvas repair note update error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Засварын тайлбар хадгалж чадсангүй",
+    });
+  }
+};
+
 export const uploadCanvasFiles = async (req: AppRequest, res: Response) => {
   const files = (req.files || []) as Express.Multer.File[];
   const uploadedObjectKeys: string[] = [];
