@@ -50,10 +50,33 @@ export const getCanvasOrders = async (req: AppRequest, res: Response) => {
   try {
     const search =
       typeof req.query.search === "string" ? req.query.search.trim() : "";
-    const books = await Book.find({ "canvas.0": { $exists: true } })
+    const requestedPage = Number.parseInt(String(req.query.page || "1"), 10);
+    const requestedPageSize = Number.parseInt(
+      String(req.query.pageSize || "50"),
+      10
+    );
+    const page = Number.isFinite(requestedPage)
+      ? Math.max(1, requestedPage)
+      : 1;
+    const pageSize = Number.isFinite(requestedPageSize)
+      ? Math.min(100, Math.max(10, requestedPageSize))
+      : 50;
+    const baseQuery = { "canvas.0": { $exists: true } };
+    const normalizedSearch = normalizeText(search);
+    const shouldSearchAll = Boolean(normalizedSearch);
+
+    const totalBooks = shouldSearchAll
+      ? 0
+      : await Book.countDocuments(baseQuery);
+    const bookQuery = Book.find(baseQuery)
       .populate(createdByPopulateOptions)
-      .sort({ createdAt: -1 })
-      .lean();
+      .sort({ createdAt: -1 });
+
+    if (!shouldSearchAll) {
+      bookQuery.skip((page - 1) * pageSize).limit(pageSize);
+    }
+
+    const books = await bookQuery.lean();
 
     const bookIds = books.map((book) => book._id);
     const uploads = await CanvasUpload.find({ bookId: { $in: bookIds } })
@@ -123,7 +146,6 @@ export const getCanvasOrders = async (req: AppRequest, res: Response) => {
       };
     });
 
-    const normalizedSearch = normalizeText(search);
     const filteredOrders = normalizedSearch
       ? orders.filter((order) =>
           normalizeText(
@@ -137,11 +159,18 @@ export const getCanvasOrders = async (req: AppRequest, res: Response) => {
           ).includes(normalizedSearch)
         )
       : orders;
+    const total = shouldSearchAll ? filteredOrders.length : totalBooks;
+    const pagedOrders = shouldSearchAll
+      ? filteredOrders.slice((page - 1) * pageSize, page * pageSize)
+      : filteredOrders;
 
     res.json({
       success: true,
-      data: filteredOrders,
-      total: filteredOrders.length,
+      data: pagedOrders,
+      total,
+      page,
+      pageSize,
+      totalPages: Math.max(1, Math.ceil(total / pageSize)),
     });
   } catch (error) {
     console.error("Canvas order fetch error:", error);
