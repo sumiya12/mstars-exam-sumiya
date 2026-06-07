@@ -17,6 +17,8 @@ const CanvasUploadSchema = new Schema(
       index: true,
     },
     objectKey: { type: String },
+    previewObjectKey: { type: String },
+    previewMimeType: { type: String },
     mimeType: { type: String, required: true },
     size: { type: Number, required: true },
     uploadedBy: {

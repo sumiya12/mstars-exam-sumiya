@@ -7,6 +7,7 @@ import {
   deleteCanvasFile,
   downloadCanvasFile,
   getCanvasOrders,
+  previewCanvasFile,
   updateCanvasRepairNote,
   uploadCanvasFiles,
   uploadRoot,
@@ -53,6 +54,7 @@ router.use(authMiddleware);
 router.get("/", getCanvasOrders);
 router.patch("/:bookId/repair-note", updateCanvasRepairNote);
 router.post("/:bookId/files", upload.array("files", 20), uploadCanvasFiles);
+router.get("/files/:fileId/preview", previewCanvasFile);
 router.get("/files/:fileId", downloadCanvasFile);
 router.delete("/files/:fileId", deleteCanvasFile);
 

@@ -37,6 +37,21 @@ export const uploadCanvasObject = async (
   );
 };
 
+export const uploadCanvasPreview = async (
+  body: Buffer,
+  objectKey: string
+) => {
+  await s3Client.send(
+    new PutObjectCommand({
+      Bucket: env.canvasS3Bucket,
+      Key: objectKey,
+      Body: body,
+      ContentType: "image/jpeg",
+      CacheControl: "private, max-age=3600",
+    })
+  );
+};
+
 export const getCanvasObject = (objectKey: string) =>
   s3Client.send(
     new GetObjectCommand({

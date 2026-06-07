@@ -3,6 +3,7 @@ import path from "node:path";
 import type { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import type { Response } from "express";
+import sharp from "sharp";
 import type { AppRequest } from "../types/http.js";
 import Book from "../models/Book.js";
 import CanvasUpload from "../models/CanvasUpload.js";
@@ -13,6 +14,7 @@ import {
   deleteCanvasObject,
   getCanvasObject,
   uploadCanvasObject,
+  uploadCanvasPreview,
   usesCanvasS3,
 } from "../services/canvasStorageService.js";
 
@@ -114,6 +116,7 @@ export const getCanvasOrders = async (req: AppRequest, res: Response) => {
           originalName: upload.originalName,
           mimeType: upload.mimeType,
           size: upload.size,
+          hasPreview: Boolean(upload.previewObjectKey),
           createdAt: upload.createdAt,
           uploadedBy: upload.uploadedBy,
         })),
@@ -226,6 +229,7 @@ export const uploadCanvasFiles = async (req: AppRequest, res: Response) => {
       const objectKey = usesCanvasS3
         ? createCanvasObjectKey(String(book._id), file.filename)
         : undefined;
+      let previewObjectKey: string | undefined;
 
       if (objectKey) {
         await uploadCanvasObject(
@@ -235,6 +239,27 @@ export const uploadCanvasFiles = async (req: AppRequest, res: Response) => {
           file.originalname
         );
         uploadedObjectKeys.push(objectKey);
+
+        try {
+          const preview = await sharp(file.path)
+            .rotate()
+            .resize({
+              width: 1200,
+              height: 1200,
+              fit: "inside",
+              withoutEnlargement: true,
+            })
+            .jpeg({ quality: 78, mozjpeg: true })
+            .toBuffer();
+          previewObjectKey = `${objectKey}.preview.jpg`;
+          await uploadCanvasPreview(preview, previewObjectKey);
+          uploadedObjectKeys.push(previewObjectKey);
+        } catch (previewError) {
+          console.warn(
+            `Canvas preview generation skipped for ${file.originalname}:`,
+            previewError
+          );
+        }
       }
 
       records.push({
@@ -243,6 +268,8 @@ export const uploadCanvasFiles = async (req: AppRequest, res: Response) => {
         storedName: file.filename,
         storageProvider: usesCanvasS3 ? "s3" : "local",
         objectKey,
+        previewObjectKey,
+        previewMimeType: previewObjectKey ? "image/jpeg" : undefined,
         mimeType: file.mimetype,
         size: file.size,
         uploadedBy,
@@ -274,6 +301,48 @@ export const uploadCanvasFiles = async (req: AppRequest, res: Response) => {
       );
     }
   }
+};
+
+export const previewCanvasFile = async (req: AppRequest, res: Response) => {
+  const upload = await CanvasUpload.findById(req.params.fileId).lean();
+  if (!upload) return res.status(404).json({ message: "Файл олдсонгүй" });
+
+  res.set({
+    "Cache-Control": "private, max-age=3600",
+    "Content-Type": upload.previewMimeType || upload.mimeType || "image/jpeg",
+    "Content-Disposition": `inline; filename="${encodeURIComponent(
+      upload.originalName
+    )}"`,
+  });
+
+  if (upload.storageProvider === "s3" && upload.objectKey) {
+    try {
+      const object = await getCanvasObject(
+        upload.previewObjectKey || upload.objectKey
+      );
+      if (!object.Body) {
+        return res.status(404).json({ message: "Preview олдсонгүй" });
+      }
+      if (object.ContentLength !== undefined) {
+        res.setHeader("Content-Length", String(object.ContentLength));
+      }
+      await pipeline(object.Body as Readable, res);
+      return;
+    } catch (error) {
+      console.error("Canvas preview error:", error);
+      if (!res.headersSent) {
+        return res.status(404).json({ message: "Preview харуулж чадсангүй" });
+      }
+      return;
+    }
+  }
+
+  const filePath = path.join(uploadRoot, upload.storedName);
+  res.sendFile(filePath, (error) => {
+    if (error && !res.headersSent) {
+      res.status(404).json({ message: "Preview файл олдсонгүй" });
+    }
+  });
 };
 
 export const downloadCanvasFile = async (req: AppRequest, res: Response) => {
@@ -323,6 +392,9 @@ export const deleteCanvasFile = async (req: AppRequest, res: Response) => {
 
     if (upload.storageProvider === "s3" && upload.objectKey) {
       await deleteCanvasObject(upload.objectKey);
+      if (upload.previewObjectKey) {
+        await deleteCanvasObject(upload.previewObjectKey);
+      }
     } else {
       await fs
         .unlink(path.join(uploadRoot, upload.storedName))
